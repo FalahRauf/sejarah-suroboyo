@@ -113,21 +113,24 @@ function blastDamage(p, r, byPlayer, playerDmg = 60) {
 
 /* ---------- prajurit (musuh & pejuang) ---------- */
 function spawnSoldier(team, pos, cover, o = {}) {
+  if (team === 'ally' && S.gfx === 'rendah' && Math.random() < .4) return null; // grafis rendah: pasukan lebih sedikit
   const m = team === 'enemy'
     ? human({ shirt: 0x8a7d55, pants: 0x7a6d48, skin: pick([0xe2b896, 0x8d5a3b, 0xa06a45, 0x6b4428]), hat: 'brodie', rifle: true, belt: 0x5a4a2a, longSleeve: Math.random() < .5, vest: Math.random() < .4 ? 0x6a6040 : null })
     : human({ hat: pick(['ikat', 'peci', null, 'kepi', 'ikat']), rifle: !o.bambu && Math.random() < .8, bambu: o.bambu, shirt: pick(SHIRTS), barefoot: Math.random() < .3 });
   m.position.set(pos.x, W.groundH(pos.x, pos.z), pos.z);
-  const s = { m, team, hp: team === 'enemy' ? 2 : 4, alive: true, cover: (cover || pos).clone(), fireT: rand(.5, 3), deadT: 0, speed: rand(2.2, 3), tgt: null, tgtT: 0, wave: o.wave, acc: o.acc || (team === 'enemy' ? .2 : .055) };
+  const s = { m, team, hp: team === 'enemy' ? 2 : 4, alive: true, cover: (cover || pos).clone(), fireT: rand(.5, 3), deadT: 0, speed: rand(2.2, 3), tgt: null, tgtT: 0, wave: o.wave, relocT: rand(5, 10), flinch: 0, shots: 0, duck: 0, fallDir: -1, kb: null, acc: o.acc || (team === 'enemy' ? .2 : .055) };
   s.melee = !m.userData.gun || !!o.bambu;
   (team === 'enemy' ? enemies : allies).push(s); return s;
 }
 function damageSoldier(s, n, byPlayer) {
   if (!s.alive) return; s.hp -= n;
   if (s.hp <= 0) {
-    s.alive = false; s.deadT = 0; setPose(s.m, 'idle'); s.m.rotation.x = 0;
+    s.alive = false; s.deadT = 0; setPose(s.m, 'idle'); s.m.rotation.x = 0; s.m.position.y = W.groundH(s.m.position.x, s.m.position.z);
+    s.fallDir = Math.random() < .7 ? -1 : 1;
+    s.kb = byPlayer ? s.m.position.clone().sub(camera.position).setY(0).normalize().multiplyScalar(3) : V([rand(-2, 2), 0, rand(-2, 2)]);
     if (s.team === 'enemy' && byPlayer) C.kills++;
     tone(s.team === 'enemy' ? 180 : 220, .3, .15, 'sawtooth', 90);
-  }
+  } else { s.flinch = 1; s.duck = 0; s.relocT = Math.min(s.relocT, rand(.4, 1.2)); tone(260, .12, .08, 'sawtooth', 180) }
 }
 function chooseTarget(s) {
   s.tgtT -= .1; if (s.tgtT > 0 && s.tgt && (s.tgt.kind === 'player' || s.tgt.ref.alive)) return s.tgt;
@@ -146,27 +149,43 @@ function soldierShoot(s, t) {
   const dist = mz.distanceTo(tp);
   let ch = s.acc * Math.max(.15, 1 - dist / 70);
   if (t.kind === 'player') { if (P.crouch) ch *= .55; if (P.running) ch *= .6 }
+  if (s.team === 'enemy') ch *= D().acc;
   const hit = Math.random() < ch;
   const end = hit ? tp : tp.clone().add(V([rand(-1.5, 1.5), rand(-.6, 1.2), rand(-1.5, 1.5)])).sub(mz).multiplyScalar(1.6).add(mz);
   tracer(mz, end);
   SFX.shot(mz.distanceTo(camera.position));
-  if (hit) { if (t.kind === 'player') damagePlayer(s.team === 'enemy' ? 8 : 0); else damageSoldier(t.ref, 1, false) }
+  if (hit) { if (t.kind === 'player') damagePlayer(s.team === 'enemy' ? 8 * D().dmg : 0); else damageSoldier(t.ref, 1, false) }
 }
 function updSoldier(s, dt) {
   const m = s.m;
   if (!s.alive) {
-    s.deadT += dt; m.rotation.x = Math.max(-Math.PI / 2, m.rotation.x - dt * 5);
+    s.deadT += dt;
+    m.rotation.x += (s.fallDir * Math.PI / 2 - m.rotation.x) * Math.min(1, dt * 7);
+    if (s.deadT < .3 && s.kb) { m.position.x += s.kb.x * dt; m.position.z += s.kb.z * dt }
     if (s.deadT > 12) { L.remove(m); s.gone = true } return;
   }
+  // reaksi kena tembak: tersentak
+  if (s.flinch > 0) { s.flinch = Math.max(0, s.flinch - dt * 3); m.rotation.z = Math.sin(s.flinch * 18) * .3 * s.flinch } else m.rotation.z = 0;
   const moving = !walkTo(m, s.cover, dt, s.speed);
-  if (moving) { setPose(m, m.userData.gun ? 'carry' : 'walk'); return }
+  if (moving) { s.duck = 0; setPose(m, m.userData.gun ? 'carry' : 'walk'); return }
+  const gy = W.groundH(m.position.x, m.position.z);
+  if (s.duck > 0) { s.duck -= dt; m.position.y = gy - .55; setPose(m, 'duck'); return } // berlindung / isi peluru
+  m.position.y = gy + .02;
+  // AI musuh: sesekali pindah posisi atau maju mengapit
+  if (s.team === 'enemy' && W.enemyZone) {
+    s.relocT -= dt;
+    if (s.relocT <= 0) { s.relocT = rand(6, 12); s.cover = W.enemyZone(s.cover, Math.random() < .3); return }
+  }
   const t = chooseTarget(s);
   if (!t) { setPose(m, m.userData.gun ? 'carry' : 'idle'); return }
   const tp = aimPoint(t); m.rotation.y = Math.atan2(tp.x - m.position.x, tp.z - m.position.z);
   if (s.melee) { setPose(m, 'cheer'); return } // bambu runcing / tanpa senapan: bersorak menyemangati
   setPose(m, 'aim');
   s.fireT -= dt;
-  if (s.fireT <= 0) { s.fireT = rand(1.1, 2.6) * (s.team === 'ally' ? 1.1 : 1); soldierShoot(s, t) }
+  if (s.fireT <= 0) {
+    s.fireT = rand(1.1, 2.6) * (s.team === 'ally' ? 1.1 : 1); soldierShoot(s, t);
+    s.shots++; if (s.team === 'enemy' && s.shots % 4 === 0) s.duck = rand(1.5, 3);
+  }
 }
 function cleanup(arr) { for (let i = arr.length - 1; i >= 0; i--) if (arr[i].gone) arr.splice(i, 1) }
 function aliveEnemies(wave) { return enemies.filter(e => e.alive && (wave === undefined || e.wave === wave)).length }
@@ -197,7 +216,7 @@ function updTank(tk, dt) {
     else {
       const want = Math.atan2(d.x, d.z); let diff = want - tk.g.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       tk.g.rotation.y += Math.sign(diff) * Math.min(Math.abs(diff), dt * .8);
-      if (Math.abs(diff) < .3) { const st = Math.min(d.length(), 1.5 * dt); tk.g.position.addScaledVector(d.normalize(), st) }
+      if (Math.abs(diff) < .3) { const st = Math.min(d.length(), 2.1 * dt); tk.g.position.addScaledVector(d.normalize(), st) }
       tk.g.position.y = W.groundH(tk.g.position.x, tk.g.position.z);
       updTankCol(tk);
     }
@@ -255,8 +274,8 @@ function damagePlayer(n) {
   const v = $('#vig'); v.style.opacity = Math.min(1, .5 + (100 - P.hp) / 120);
   if (P.hp <= 0) die();
 }
-function die() {
-  mode = 'busy'; P.hp = 0; stopVO(); toast('KAMU GUGUR... BANGKIT LAGI!', 2000);
+function die(msg) {
+  mode = 'busy'; P.hp = 0; stopVO(); toast(msg || 'KAMU GUGUR... BANGKIT LAGI!', 2000);
   fadeOut(() => {
     P.hp = 100; P.carry = false; const c = P.check; W.roof = null; teleport(c[0], c[1], c[2]);
     C.ammo = C.mag; C.reserve = Math.max(C.reserve, 40); if (C.hasGun) C.gren = Math.max(C.gren, 2);

@@ -67,6 +67,46 @@ body.cine #skip{display:block}
 #hit{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;opacity:0;transition:opacity .1s;font-weight:700}
 #vig{position:absolute;inset:0;opacity:0;box-shadow:inset 0 0 160px 60px rgba(200,0,0,.75)}
 #timer{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:40px;letter-spacing:3px;text-shadow:0 2px 6px #000}
+.mbtns{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
+.mbtns button{width:min(320px,80vw);margin:0}
+.mbtns .sec{background:transparent;font-size:17px;padding:9px 20px}
+.mbtns .sec:hover{background:#fff;color:var(--ink)}
+.panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.78);z-index:70;padding:16px}
+.card{background:#1d1a14;border:2px solid var(--paper);padding:20px 24px;width:min(520px,100%);max-height:92vh;overflow:auto}
+.card h3{margin:0 0 12px;letter-spacing:3px;color:#ffd84a}
+.card label{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0;font-size:16px}
+.card input[type=range]{width:50%}
+.card select{font-family:Oswald;font-size:15px;padding:4px;background:#2b261c;color:#fff;border:1px solid #888}
+.card button{font-size:16px;padding:8px 22px}
+.card p,.card li{font-family:'Special Elite',monospace;font-size:14px;line-height:1.6;color:#ddd}
+.card h4{margin:14px 0 4px;color:var(--paper);letter-spacing:2px}
+#chapSel .card button{display:block;width:100%;margin:8px 0;text-align:left}
+#chapSel small{display:block;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0;opacity:.85}
+#chapSel button:disabled{opacity:.45;cursor:not-allowed;background:#444}
+#pause .card{text-align:center}
+#pause .card button{display:block;width:100%;margin:10px 0}
+#quiz .card{width:min(640px,100%)}
+#qNum{color:var(--red);letter-spacing:3px;font-size:13px}
+#qText{font-size:21px;margin:8px 0 14px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:#2b261c;border:1px solid #888;font-size:16px;letter-spacing:0;padding:10px 14px}
+.opt:hover{background:#3b3426;color:#fff}
+.opt.right{background:#2f7a3a;border-color:#8cff9c}
+.opt.wrong{background:#8a2a20;border-color:#ff8a80}
+#qExp{font-family:'Special Elite',monospace;min-height:24px;color:#eee}
+#touch{position:fixed;inset:0;z-index:15;pointer-events:none}
+#touch button,#joy{pointer-events:auto;touch-action:none}
+#joy{position:absolute;left:28px;bottom:28px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35)}
+#knob{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.55)}
+#tbtns{position:absolute;right:18px;bottom:110px;display:grid;grid-template-columns:repeat(3,62px);gap:10px}
+#tbtns button{width:62px;height:62px;border-radius:50%;padding:0;margin:0;font-size:18px;letter-spacing:0;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.6)}
+#tbtns .big{background:rgba(200,16,46,.7)}
+#tnext,#tskip{position:absolute;right:18px;bottom:28px;font-size:15px;padding:10px 18px;margin:0;background:rgba(0,0,0,.55)}
+#tskip{right:150px}
+#pauseBtn{position:absolute;top:14px;right:14px;font-size:20px;padding:6px 14px;margin:0;background:rgba(0,0,0,.5)}
+body.cine #joy,body.cine #tbtns{display:none}
+body.touch #stance{bottom:170px}
+body.touch #combatHud{bottom:auto;top:60px}
+@media (max-width:700px){#obj{max-width:60vw}#objText{font-size:14px}}
 #endStats{font-family:'Special Elite',monospace;color:#ffd84a}
 </style>
 </head>
@@ -75,9 +115,15 @@ body.cine #skip{display:block}
   <h1>AREK <span>SUROBOYO</span></h1>
   <h2>— 1945 —</h2>
   <p>Tiga babak perjuangan rakyat Surabaya: Insiden Bendera di Hotel Yamato, Pertempuran 10 November di Jembatan Merah, dan pertahanan terakhir di Gunungsari.</p>
-  <button id="startBtn">MULAI</button>
+  <div class="mbtns">
+    <button id="btnNew">MULAI BARU</button>
+    <button id="btnCont" class="sec" hidden>LANJUTKAN</button>
+    <button id="btnChap" class="sec">PILIH BABAK</button>
+    <button id="btnSet" class="sec">PENGATURAN</button>
+    <button id="btnCred" class="sec">SUMBER &amp; KREDIT</button>
+  </div>
   <div class="ctrl"><b>W A S D</b> gerak &nbsp; <b>Mouse</b> lihat &nbsp; <b>Shift</b> lari &nbsp; <b>C</b> merunduk &nbsp; <b>E</b> interaksi<br>
-  <b>Klik Kiri</b> tembak &nbsp; <b>R</b> isi peluru &nbsp; <b>G</b> granat &nbsp; <b>Spasi</b> lanjut &nbsp; <b>Enter</b> lewati adegan &nbsp; <b>M</b> suara<br>Pakai headphone untuk pengalaman terbaik 🎧</div>
+  <b>Esc</b> pause &nbsp; <b>Klik Kiri</b> tembak &nbsp; <b>R</b> isi peluru &nbsp; <b>G</b> granat &nbsp; <b>Spasi</b> lanjut &nbsp; <b>Enter</b> lewati adegan &nbsp; <b>M</b> suara<br>Pakai headphone untuk pengalaman terbaik 🎧</div>
 </div></div>
 
 <div id="hud" hidden>
@@ -99,22 +145,77 @@ body.cine #skip{display:block}
 <div id="chapter"><b></b><span></span></div>
 <div id="dialog" hidden><div id="dName"></div><div id="dText"></div><small>[E / Spasi] lanjut</small></div>
 <div id="fact" hidden><small>FAKTA SEJARAH</small><h3></h3><p></p><button>[E] LANJUT</button></div>
-<div id="pause" hidden>KLIK UNTUK MELANJUTKAN</div>
+<div id="pause" class="panel" hidden><div class="card">
+  <h3>⏸ PAUSE</h3>
+  <button id="btnResume">LANJUTKAN</button>
+  <button id="btnRetry" class="sec">ULANGI DARI CHECKPOINT</button>
+  <button id="btnPSet" class="sec">PENGATURAN</button>
+  <button id="btnMenu" class="sec">KEMBALI KE MENU UTAMA</button>
+</div></div>
+<div id="settings" class="panel" hidden><div class="card">
+  <h3>PENGATURAN</h3>
+  <label>Sensitivitas mouse / layar <input type="range" id="sSens" min="0.3" max="2.5" step="0.1"></label>
+  <label>Volume musik <input type="range" id="sMusic" min="0" max="0.5" step="0.01"></label>
+  <label>Volume efek suara <input type="range" id="sSfx" min="0" max="1.5" step="0.05"></label>
+  <label>Suara narasi <select id="sVoice"><option value="1">Nyala</option><option value="0">Mati (teks saja)</option></select></label>
+  <label>Grafis <select id="sGfx"><option value="tinggi">Tinggi</option><option value="rendah">Rendah (laptop lemah / HP)</option></select></label>
+  <label>Tingkat kesulitan <select id="sDiff"><option value="mudah">Mudah</option><option value="normal">Normal</option><option value="sulit">Sulit</option></select></label>
+  <button class="close">SELESAI</button>
+</div></div>
+<div id="chapSel" class="panel" hidden><div class="card">
+  <h3>PILIH BABAK</h3>
+  <button data-act="1" data-sub="Insiden Bendera Hotel Yamato · 19 September 1945">BABAK I<small></small></button>
+  <button data-act="2" data-sub="Pertempuran Jembatan Merah · 10 November 1945">BABAK II<small></small></button>
+  <button data-act="3" data-sub="Pertahanan Gunungsari · Akhir November 1945">BABAK III<small></small></button>
+  <button class="sec back">KEMBALI</button>
+</div></div>
+<div id="credits" class="panel" hidden><div class="card">
+  <h3>SUMBER &amp; KREDIT</h3>
+  <h4>DIBUAT OLEH</h4><p id="credName"></p>
+  <h4>SUMBER SEJARAH</h4>
+  <ul>
+    <li>Ensiklopedia Sejarah Indonesia, Kemendikbudristek (esi.kemdikbud.go.id): entri Insiden Hotel Yamato, Pertempuran Surabaya, Bung Tomo</li>
+    <li>Museum Sepuluh Nopember / Tugu Pahlawan, Surabaya</li>
+    <li>Arsip Nasional Republik Indonesia (ANRI)</li>
+    <li>Keputusan Presiden RI No. 316 Tahun 1959 tentang Hari-Hari Nasional (penetapan Hari Pahlawan)</li>
+    <li>Buku pelajaran Sejarah Indonesia SMA/SMK kelas XI (Kemendikbud)</li>
+  </ul>
+  <h4>CATATAN</h4>
+  <p>Tokoh Cak Mat, Dul, Sri, Koh Liem, Komandan Basuki, dan para warga adalah tokoh rekaan. Residen Soedirman, Ploegman, Hariyono, Koesno Wibowo, Bung Tomo, dan Brigjen Mallaby adalah tokoh sejarah nyata. Isi pidato radio diringkas dari pidato Bung Tomo.</p>
+  <h4>TEKNOLOGI</h4>
+  <p>Three.js (lisensi MIT) · Font Oswald &amp; Special Elite (Google Fonts, lisensi OFL) · Semua model 3D, musik, dan efek suara dibuat langsung dengan kode (Web Audio API).</p>
+  <button class="sec back">TUTUP</button>
+</div></div>
+<div id="quiz" class="panel" hidden><div class="card">
+  <div id="qNum"></div><div id="qText"></div><div id="qOpts"></div><div id="qExp"></div>
+  <button id="qNext" hidden>LANJUT ▶</button>
+</div></div>
+<div id="touch" hidden>
+  <div id="joy"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button data-t="nade">💣</button><button data-t="reload">R</button><button data-t="fire" class="big">🔫</button>
+    <button data-t="crouch">C</button><button data-t="run">LARI</button><button data-t="act">E</button>
+  </div>
+  <button id="tskip">LEWATI ⏭</button>
+  <button id="tnext">LANJUT ▶</button>
+  <button id="pauseBtn">⏸</button>
+</div>
 <div id="end" hidden><div class="box">
   <h2>10 NOVEMBER</h2>
   <h1>HARI <span>PAHLAWAN</span></h1>
   <p>"Bangsa yang besar adalah bangsa yang menghargai jasa pahlawannya."<br><br>
   Pertempuran Surabaya adalah salah satu pertempuran terbesar dalam Revolusi Nasional Indonesia. Sejak 1959, tanggal 10 November ditetapkan sebagai Hari Pahlawan.</p>
-  <p id="endStats">Musuh dilumpuhkan: <span id="endKills">0</span></p>
-  <button onclick="location.href=location.pathname">MAIN LAGI</button>
+  <p id="endStats">Skor kuis: <span id="endQuiz">-</span> &nbsp;·&nbsp; Musuh dilumpuhkan: <span id="endKills">0</span><br><span id="endGrade"></span></p>
+  <div class="mbtns"><button onclick="location.href=location.pathname">MAIN LAGI</button><button id="endCred" class="sec">SUMBER &amp; KREDIT</button></div>
 </div></div>
 <div id="fade"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/lib/three.min.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/chars.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/story.js"></script>
+<script src="js/ui.js"></script>
 </body>
 </html>

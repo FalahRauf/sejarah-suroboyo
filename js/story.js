@@ -104,9 +104,11 @@ function nego() {
     c.position.set(rand(-2, 7), .02, rand(-41, -19)); c.rotation.y = Math.PI / 2 + rand(-.4, .4); crowd.push(c);
   }
   youths.forEach((y, i) => { y.position.set(4 + i, .02, -27 - i * 2); y.rotation.y = Math.PI / 2; y.userData.goal = null });
+  const sud = human({ name: 'Residen Soedirman', shirt: 0xf2f0ea, pants: 0xf2f0ea, longSleeve: true, hat: 'peci', mustache: true, skin: 0x7a4a2e, shoe: 0x111111 });
+  sud.position.set(2, .02, -30); sud.userData.goal = V([9.3, 0, -30]); youths.push(sud);
   spawnGuards();
   playCut([
-    { from: [-6, 4, -12], to: [-3, 3, -22], look: [10, 3, -30], text: 'Ratusan warga berkumpul di depan Hotel Yamato. Residen Soedirman masuk untuk berunding dan meminta bendera Belanda diturunkan.', fn: () => { if (A.crowd) A.crowd.gain.value = .15 } },
+    { from: [-4, 3, -20], to: [1, 2.4, -25], look: [8, 1.6, -30], text: 'Ratusan warga berkumpul di depan Hotel Yamato. Residen Soedirman masuk untuk berunding dan meminta bendera Belanda diturunkan.', fn: () => { if (A.crowd) A.crowd.gain.value = .15 } },
     { from: [6, 2.2, -27], to: [7, 2, -31], look: [12, 2, -30], text: 'Pimpinan Belanda, Ploegman, menolak. Perundingan gagal, dan perkelahian pecah di dalam lobi hotel.', fn: () => SFX.shot(20) },
     { from: [3, 5, -48], to: [12, 4, -19], look: [25, 2, -22], text: 'Di tengah kekacauan, para pemuda mencari jalan menuju atap. Penjaga masih berjaga. Gang di samping hotel menuju pintu belakang.' },
   ], () => {
@@ -119,8 +121,12 @@ function nego() {
       remI(it); stealth = false; $('#sus').style.display = 'none';
       fadeOut(() => {
         W.roof = ROOF; teleport(20, -34, -Math.PI * .75);
-        setObj('Panjat tiang bendera', () => refs.pole);
-        const it2 = addI(refs.pole, 'Panjat & robek warna biru', () => { remI(it2); flagScene() }, 2.2);
+        const har = human({ name: 'Hariyono', shirt: 0xe8e0c8, hat: 'ikat' }); har.position.set(15.6, H.h + .2, -31.6); har.rotation.y = -Math.PI / 2;
+        const koe = human({ name: 'Koesno Wibowo', shirt: 0xd6c7a1, pants: 0x2a2a2a }); koe.position.set(15.6, H.h + .2, -28.4); koe.rotation.y = -Math.PI / 2;
+        dialog('Hariyono', ['Kowe yo munggah, Rek? Apik! Aku Hariyono, iki Koesno Wibowo.', 'Kita robek warna birunya. Biar yang tersisa merah putih! Ayo bantu kami di tiang bendera!'], () => {
+          setObj('Panjat tiang bendera', () => refs.pole);
+          const it2 = addI(refs.pole, 'Panjat & robek warna biru', () => { remI(it2); flagScene() }, 2.2);
+        }, { vo: 'hariyono' });
       });
     }, 2.6);
   }, 'nego');
@@ -129,7 +135,7 @@ function flagScene() {
   const f = refs.bigFlag;
   playCut([
     { from: [16, 15, -26], to: [15, 18, -27.5], look: [14, 19, -29], text: 'Kamu memanjat tiang bendera. Angin bertiup kencang. Di bawah, ribuan mata menatap ke atas.' },
-    { from: [12.5, 19.6, -26.5], to: [12.8, 19.3, -27.2], look: [14, 19, -29.5], dur: 5, text: 'Kain biru itu dirobek!', fn: () => setTimeout(() => { SFX.tear(); f.material.map = flagTex(['#c8102e', '#ffffff']); f.material.needsUpdate = true; f.scale.y = .667; f.position.y = H.h + 7 + .333 }, 1500) },
+    { from: [12.5, 19.6, -26.5], to: [12.8, 19.3, -27.2], look: [14, 19, -29.5], dur: 5, text: 'Bersama Hariyono dan Koesno Wibowo, kain biru itu dirobek!', fn: () => setTimeout(() => { SFX.tear(); f.material.map = flagTex(['#c8102e', '#ffffff']); f.material.needsUpdate = true; f.scale.y = .667; f.position.y = H.h + 7 + .333 }, 1500) },
     { from: [0, 2, -34], to: [-2, 1.7, -36], look: [14, 19, -30], text: 'Merah Putih kembali berkibar di langit Surabaya. MERDEKA!', fn: () => { SFX.cheer(); if (A.crowd) A.crowd.gain.value = .25; crowd.concat(youths).forEach(c => setPose(c, 'cheer')) } },
   ], () => {
     if (A.crowd) A.crowd.gain.value = 0;
@@ -142,7 +148,8 @@ let wave = 0, waveOn = false, warga = [], followers = [], saved = 0, shellT = 5;
 function startAct2() {
   W.roof = null; guards.length = 0; stealth = false; youths = []; crowd = [];
   fadeOut(() => {
-    refs = buildAct2();
+    refs = buildAct2(); saveProgress(2);
+    W.enemyZone = (c, flank) => { let x = c.x + rand(-7, 7), z; if (Math.abs(x) < 2.6 && Math.random() < .5) z = rand(-26, -15); else { if (Math.abs(x) < 4) x = x < 0 ? -5 : 5; z = rand(-37, -30.5) } return V([Math.max(-34, Math.min(34, x)), 0, z]) };
     mat = human({ name: 'Cak Mat', shirt: 0xf3efe0, pants: 0x3b3a30, hat: 'peci', mustache: true, skin: 0x7a4a2e, rifle: true });
     mat.position.set(8, .02, 20.5); mat.rotation.y = -Math.PI / 2;
     for (let x = -16; x <= 16; x += 2.8) if (Math.abs(x) > 2) spawnSoldier('ally', V([x, 0, rand(14, 30)]), V([x + rand(-.4, .4), 0, -4.8]));
@@ -250,7 +257,8 @@ const POSTS = [-20, 0, 20];
 function startAct3() {
   fadeOut(() => {
     warga = []; followers = []; wave = 0; waveOn = false;
-    refs = buildAct3();
+    refs = buildAct3(); saveProgress(3);
+    W.enemyZone = (c, flank) => V([Math.max(-34, Math.min(34, c.x + rand(-8, 8))), 0, flank ? rand(-14, -7) : Math.max(-60, Math.min(-8, c.z + rand(-6, 6)))]);
     komandan = human({ name: 'Komandan Basuki', shirt: 0x5a6a3a, pants: 0x4a5030, hat: 'kepi', hatColor: 0x4a5030, mustache: true, rifle: true, longSleeve: true });
     komandan.position.set(-1, hAct3(-1, 23), 23); komandan.rotation.y = Math.PI;
     for (let x = -32; x <= 32; x += 3.4) if (Math.abs(x) > 1.5) spawnSoldier('ally', V([x, 0, rand(5, 14)]), V([x + rand(-.5, .5), 0, -1]));
@@ -295,7 +303,7 @@ function tankPhase() {
   addI(refs.depot, 'Ambil amunisi & granat', refill, 3);
 }
 function retreatPhase() {
-  phase3 = 3; timer3 = 55;
+  phase3 = 3; timer3 = D().timer;
   dialog('Komandan Basuki', ['Tank hancur! Tapi pasukan musuh terlalu banyak. Semua mundur!', 'Seberangi jembatan Brantas sekarang. Jembatan akan diledakkan untuk menahan musuh!'], () => {
     checkpoint(0, 27, 0);
     setObj('MUNDUR! Seberangi jembatan sebelum diledakkan', () => V([0, 0, 54]));
@@ -303,7 +311,7 @@ function retreatPhase() {
     allies.forEach((a, i) => { a.cover = V([rand(-2.4, 2.4), 0, 33]); a.retreat = 1; a.speed = rand(3.2, 4) });
     for (let i = 0; i < 10; i++) setTimeout(() => spawnSoldier('enemy', V([rand(-30, 30), 0, -80]), V([rand(-30, 30), 0, rand(-20, -6)])), i * 600);
     flyBy(10, 6, 1); setTimeout(() => flyBy(20, 6, -1), 9000);
-    W.onRespawn = () => { timer3 = 45 };
+    W.onRespawn = () => { timer3 = D().timer - 10 };
   }, { vo: 'komandan3' });
 }
 function bridgeScene() {
@@ -352,14 +360,16 @@ function ending() {
     { from: [-30, 40, 70], to: [30, 45, 50], look: [0, 0, -20], text: 'Pertempuran Surabaya berlangsung sekitar tiga minggu. Ribuan pejuang dan warga gugur mempertahankan kemerdekaan.' },
     { from: [-10, 20, 0], to: [10, 22, -10], look: [0, 0, -60], text: 'Surabaya akhirnya dikuasai Sekutu, tetapi perlawanan arek-arek Suroboyo mengejutkan dunia: bangsa Indonesia siap mempertahankan kemerdekaannya.' },
     { from: [4, 3, 2], to: [5, 4.5, 4], look: [6, 4, 0], text: 'Untuk mengenang keberanian mereka, setiap tanggal 10 November diperingati sebagai Hari Pahlawan.' },
-  ], () => { mode = 'end'; document.exitPointerLock(); $('#hud').hidden = true; $('#end').hidden = false; A.scale = 'act1'; $('#endKills').textContent = C.kills }, 'ending');
+  ], () => { A.scale = 'act1'; showQuiz() }, 'ending');
 }
 
 /* =================== LOOP UTAMA =================== */
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (paused) { renderer.render(scene, camera); return }
+  T += dt;
   if (mode === 'play') updatePlayer(dt);
   else if (mode === 'cut' && cut) updateCut(dt);
   else if (mode === 'menu') { camera.position.set(Math.sin(T * .05) * 40, 22, 40 + Math.cos(T * .05) * 20); camera.lookAt(14, 12, -30) }
@@ -380,14 +390,4 @@ function loop(now) {
 setupAct1();
 requestAnimationFrame(loop);
 setTimeout(() => $('#fade').style.opacity = 0, 200);
-$('#startBtn').onclick = () => {
-  initAudio(); $('#menu').hidden = true; $('#hud').hidden = false;
-  canvas.requestPointerLock();
-  mode = 'busy'; fadeOut(intro, 200);
-};
-// mode uji: index.html#babak2 atau #babak3 langsung lompat ke babak itu
-$('#startBtn').dataset.jump = location.hash;
-if (location.hash === '#babak2' || location.hash === '#babak3') $('#startBtn').onclick = () => {
-  initAudio(); $('#menu').hidden = true; $('#hud').hidden = false; canvas.requestPointerLock(); mode = 'busy';
-  if (location.hash === '#babak2') { youths.forEach(y => L.remove(y)); youths = []; startAct2() } else { youths = []; giveGun(3); startAct3() }
-};
+// tombol menu, pause, pengaturan, kuis ada di js/ui.js

@@ -7,13 +7,31 @@ const V = a => new R.Vector3(...a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 let mode = 'menu', T = 0, shake = 0;
 
+/* ---------------- PENGATURAN (tersimpan di browser) ---------------- */
+const S = Object.assign({ sens: 1, music: .17, sfx: 1, voice: true, gfx: 'tinggi', diff: 'normal' },
+  (() => { try { return JSON.parse(localStorage.getItem('arek_settings')) || {} } catch (e) { return {} } })());
+function saveSettings() { try { localStorage.setItem('arek_settings', JSON.stringify(S)) } catch (e) {} }
+const DIFF = { mudah: { acc: .6, dmg: .6, timer: 75 }, normal: { acc: 1, dmg: 1, timer: 55 }, sulit: { acc: 1.35, dmg: 1.4, timer: 45 } };
+const D = () => DIFF[S.diff] || DIFF.normal;
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+let paused = false;
+const isLocked = () => TOUCH || document.pointerLockElement === renderer.domElement;
+
 /* ---------------- AUDIO (semua disintesis) ---------------- */
 const A = { ctx: null, muted: false, scale: 'act1', step: 0, mel: 2 };
 function initAudio() {
   const ac = new (window.AudioContext || window.webkitAudioContext)(); A.ctx = ac;
   A.master = ac.createGain(); A.master.gain.value = .85; A.master.connect(ac.destination);
-  A.music = ac.createGain(); A.music.gain.value = .17; A.music.connect(A.master);
-  A.sfx = ac.createGain(); A.sfx.connect(A.master);
+  A.music = ac.createGain(); A.music.gain.value = S.music; A.music.connect(A.master);
+  A.sfx = ac.createGain(); A.sfx.gain.value = S.sfx; A.sfx.connect(A.master);
+  // gema (reverb) supaya tembakan & ledakan terdengar lebih "luas"
+  const ir = ac.createBuffer(2, ac.sampleRate * 2.2, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d2 = ir.getChannelData(c); for (let i = 0; i < d2.length; i++) d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d2.length, 3) }
+  const conv = ac.createConvolver(); conv.buffer = ir;
+  A.verb = ac.createGain(); A.verb.gain.value = .28; A.sfx.connect(A.verb); A.verb.connect(conv).connect(A.master);
+  // efek suara asli opsional: audio/sfx/<nama>.mp3
+  A.samples = {};
+  if (location.protocol !== 'file:') SAMPLE_NAMES.forEach(n => fetch('audio/sfx/' + n + '.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => b && ac.decodeAudioData(b)).then(buf => { if (buf) A.samples[n] = buf }).catch(() => {}));
   const len = ac.sampleRate * 2, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   A.noise = b;
@@ -49,11 +67,17 @@ function tone(freq, dur, vol, type = 'sine', slide, dest) {
   const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g).connect(dest || A.sfx); o.start(t); o.stop(t + dur + .05);
 }
+const SAMPLE_NAMES = ['rifle', 'shot', 'boom', 'reload', 'step', 'hurt', 'cheer', 'grenade', 'door', 'whistle'];
+function playSample(n, vol = 1) {
+  const b = A.samples && A.samples[n]; if (!b) return false;
+  const s = A.ctx.createBufferSource(); s.buffer = b; s.playbackRate.value = rand(.94, 1.06);
+  const g = A.ctx.createGain(); g.gain.value = vol; s.connect(g).connect(A.sfx); s.start(); return true;
+}
 const SFX = {
   step(soft) { nz(.08, 'lowpass', rand(450, 750), soft ? .06 : .16) },
-  boom(d = 10) { const v = Math.max(.1, 1.3 - d / 35); nz(2.4, 'lowpass', 240, v, 1, .01); tone(60, 1.3, v, 'sine', 28); nz(.35, 'bandpass', 900, v * .5) },
+  boom(d = 10) { const v = Math.max(.1, 1.3 - d / 35); nz(2.4, 'lowpass', 240, v, 1, .01); tone(60, 1.3, v, 'sine', 28); tone(32, 1.8, v * .8, 'sine', 20); nz(.35, 'bandpass', 900, v * .5); for (let i = 0; i < 6; i++) setTimeout(() => nz(.04, 'highpass', 2600, v * .12), 300 + i * rand(60, 170)) },
   shot(d = 40) { nz(.16, 'bandpass', rand(900, 1900), Math.max(.03, .5 - d / 120), .8, .002) },
-  rifle() { nz(.22, 'lowpass', 2600, 1, .7, .001); tone(130, .25, .55, 'sine', 45); nz(.7, 'bandpass', 500, .12, .5, .03) },
+  rifle() { nz(.05, 'highpass', 3200, .9, .7, .001); nz(.24, 'lowpass', 2300, 1, .7, .001); tone(140, .22, .6, 'sine', 40); nz(.9, 'bandpass', 420, .14, .4, .04); setTimeout(() => { tone(1800, .03, .05, 'square'); nz(.05, 'highpass', 4000, .1) }, 380) },
   reload() { tone(900, .05, .15, 'square'); setTimeout(() => tone(600, .06, .15, 'square'), 300); setTimeout(() => tone(1100, .05, .15, 'square'), 900) },
   hit() { tone(1900, .05, .1, 'square') },
   hurt() { tone(240, .25, .22, 'sawtooth', 110) },
@@ -67,6 +91,17 @@ const SFX = {
   cheer() { nz(4, 'bandpass', 850, .6, .4, 1); nz(3.5, 'bandpass', 1700, .3, .6, .8) },
   door(open) { tone(open ? 180 : 140, .35, .1, 'sawtooth', open ? 120 : 90); nz(.15, 'lowpass', 400, .25) },
 };
+// kalau ada file audio/sfx/<nama>.mp3, file itu yang diputar; kalau tidak, pakai suara sintesis
+Object.keys(SFX).forEach(k => {
+  const f = SFX[k], n = k === 'pin' ? 'grenade' : k;
+  SFX[k] = (...a) => {
+    if (SAMPLE_NAMES.includes(n)) {
+      const vol = (k === 'boom' || k === 'shot') ? Math.max(.08, 1 - (a[0] || 10) / 70) : (k === 'step' && a[0]) ? .4 : 1;
+      if (playSample(n, vol)) return;
+    }
+    f(...a);
+  };
+});
 const SCALES = { act1: [0, 240, 480, 720, 960, 1200, 1440, 1680], act2: [0, 120, 270, 540, 670, 800, 1200, 1320] };
 function pluck(f, v = .25) { tone(f, 1.4, v, 'triangle', null, A.music); tone(f * 2.01, .6, v * .3, 'sine', null, A.music) }
 function musicTick() {
@@ -85,7 +120,7 @@ function musicTick() {
 let curVO = null;
 function stopVO() { if (window.speechSynthesis) speechSynthesis.cancel(); if (curVO) { curVO.pause(); curVO = null } }
 function speak(text, pitch = 1, rate = 1, id, onDur) {
-  stopVO(); if (A.muted) return;
+  stopVO(); if (A.muted || !S.voice) return;
   if (id) {
     const a = new Audio('audio/' + id + '.mp3'); curVO = a; let done = false;
     a.onloadedmetadata = () => { onDur && onDur(a.duration) };
@@ -267,15 +302,16 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => keys[e.code] = false);
 const canvas = renderer.domElement;
-const lock = () => { if (mode !== 'menu' && mode !== 'end') canvas.requestPointerLock() };
-canvas.addEventListener('click', lock); $('#pause').addEventListener('click', lock);
-document.addEventListener('pointerlockchange', () => { $('#pause').hidden = !(document.pointerLockElement !== canvas && mode === 'play') });
+const lock = () => { if (!TOUCH && mode !== 'menu' && mode !== 'end') { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}) } };
+canvas.addEventListener('click', () => { if (!paused) lock() });
+document.addEventListener('pointerlockchange', () => { if (window.onLockChange) onLockChange() });
 addEventListener('mousemove', e => {
-  if (document.pointerLockElement !== canvas || mode !== 'play') return;
-  P.yaw -= e.movementX * .0022; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - e.movementY * .0022));
+  if (document.pointerLockElement !== canvas || mode !== 'play' || paused) return;
+  P.yaw -= e.movementX * .0022 * S.sens; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - e.movementY * .0022 * S.sens));
 });
-addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === canvas && mode === 'play' && window.fire) fire() });
+addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === canvas && mode === 'play' && !paused && window.fire) fire() });
 function action(code) {
+  if (paused) return;
   if (mode === 'dialog') return nextLine();
   if (mode === 'fact') return closeFact();
   if (mode === 'cut' && code === 'Space') return nextShot();
@@ -293,6 +329,7 @@ function updatePlayer(dt) {
   const f = new R.Vector3(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)), r = new R.Vector3(Math.cos(P.yaw), 0, -Math.sin(P.yaw));
   const mv = new R.Vector3();
   if (keys.KeyW) mv.add(f); if (keys.KeyS) mv.sub(f); if (keys.KeyD) mv.add(r); if (keys.KeyA) mv.sub(r);
+  if (P.joy) { mv.addScaledVector(f, -P.joy.y); mv.addScaledVector(r, P.joy.x) }
   const running = (keys.ShiftLeft || keys.ShiftRight) && !P.crouch && !P.carry;
   const spd = P.carry ? 3.3 : P.crouch ? 2.3 : running ? 7.5 : 4.5;
   if (mv.lengthSq()) {
@@ -387,7 +424,7 @@ function updateCut(dt) {
 const parts = [];
 const smokeTex = canvasTex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h) });
 function puff(pos, color, size, life, vel, grow = 2) {
-  if (parts.length > 320) return;
+  if (parts.length > (S.gfx === 'rendah' ? 110 : 320)) return;
   const s = new R.Sprite(new R.SpriteMaterial({ map: smokeTex, color, transparent: true, depthWrite: false, opacity: .9 }));
   s.position.copy(pos); s.scale.setScalar(size); L.add(s);
   parts.push({ s, life, max: life, vel, grow });

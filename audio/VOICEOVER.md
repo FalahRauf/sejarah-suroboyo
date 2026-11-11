@@ -13,7 +13,7 @@ Durasi cutscene otomatis menyesuaikan panjang rekamanmu.
 | nego-2.mp3 | Pimpinan Belanda, Ploegman, menolak. Perundingan gagal, dan perkelahian pecah di dalam lobi hotel. |
 | nego-3.mp3 | Di tengah kekacauan, para pemuda mencari jalan menuju atap. Penjaga masih berjaga. Gang di samping hotel menuju pintu belakang. |
 | bendera-1.mp3 | Kamu memanjat tiang bendera. Angin bertiup kencang. Di bawah, ribuan mata menatap ke atas. |
-| bendera-2.mp3 | Kain biru itu dirobek! |
+| bendera-2.mp3 | Bersama Hariyono dan Koesno Wibowo, kain biru itu dirobek! |
 | bendera-3.mp3 | Merah Putih kembali berkibar di langit Surabaya. MERDEKA! |
 | babak2-1.mp3 | 25 Oktober 1945, pasukan Sekutu dari Inggris mendarat di Surabaya. Ketegangan dengan para pejuang terus meningkat. |
 | babak2-2.mp3 | 30 Oktober, pimpinan pasukan Inggris, Brigadir Jenderal Mallaby, tewas dalam baku tembak di dekat Jembatan Merah. Inggris pun murka. |
@@ -60,3 +60,5 @@ Durasi cutscene otomatis menyesuaikan panjang rekamanmu.
 | cakmat3-1.mp3 | Rek, iki senapan rampasan teko gudang senjata Jepang. Gawe en! |
 | cakmat3-2.mp3 | Klik kiri untuk menembak, R untuk mengisi peluru, dan G untuk melempar granat. Merunduk di balik karung pasir biar tidak kena tembak! |
 | cakmat3-3.mp3 | Musuh mau menyeberang lewat Jembatan Merah. Ayo ke barikade! |
+| hariyono-1.mp3 | Kowe yo munggah, Rek? Apik! Aku Hariyono, iki Koesno Wibowo. |
+| hariyono-2.mp3 | Kita robek warna birunya. Biar yang tersisa merah putih! Ayo bantu kami di tiang bendera! |

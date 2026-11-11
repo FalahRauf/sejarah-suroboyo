@@ -83,6 +83,7 @@ function setPose(h, p) {
   }
   if (p === 'aim') { u.armR.rotation.x = -1.5; u.armL.rotation.x = -1.4; u.armL.rotation.z = .45 }
   else if (p === 'carry' || (u.gun && p === 'idle')) { u.armR.rotation.x = -.7; u.armL.rotation.x = -.9; u.armL.rotation.z = .3 }
+  else if (p === 'duck') { u.armR.rotation.x = -.9; u.armL.rotation.x = -1; u.armL.rotation.z = .3 }
   else if (p === 'cheer') { u.armL.rotation.x = -2.9; u.armR.rotation.x = -2.9 }
 }
 function animHuman(h, spd, dt) {
