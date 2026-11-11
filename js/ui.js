@@ -117,6 +117,8 @@ if (TOUCH) {
     b.addEventListener('touchend', () => { if (b.dataset.t === 'run') keys.ShiftLeft = false });
   });
   $('#tnext').addEventListener('touchstart', e => { e.preventDefault(); action('Space') }, { passive: false });
+  // dialog bisa juga dilanjutkan dengan mengetuk kotak dialognya
+  $('#dialog').addEventListener('touchstart', e => { e.preventDefault(); if (mode === 'dialog') nextLine() }, { passive: false });
   $('#tskip').addEventListener('touchstart', e => { e.preventDefault(); if (mode === 'cut') skipCut() }, { passive: false });
 }
 
