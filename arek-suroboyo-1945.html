@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arek Suroboyo 1945</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{--red:#c8102e;--paper:#efe4c8;--ink:#1d1a14}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:'Oswald',sans-serif;color:#fff}
+canvas{display:block}
+#menu,#end{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;
+ background:radial-gradient(ellipse at center,rgba(60,20,10,.55),rgba(0,0,0,.92))}
+.box{max-width:620px;padding:24px 16px;text-align:center}
+h1{font-size:clamp(40px,9vw,84px);margin:0;letter-spacing:4px;line-height:1}
+h1 span{color:var(--red)}
+h2{font-family:'Special Elite',monospace;font-weight:400;margin:8px 0 20px;color:var(--paper);letter-spacing:6px}
+.box p{font-family:'Special Elite',monospace;color:#ddd;line-height:1.6}
+button{font-family:'Oswald';font-size:22px;letter-spacing:3px;padding:12px 44px;background:var(--red);color:#fff;border:2px solid #fff;cursor:pointer;margin-top:12px}
+button:hover{background:#fff;color:var(--red)}
+.ctrl{margin-top:22px;font-size:14px;color:#bbb;line-height:1.9}
+.ctrl b{display:inline-block;background:#fff;color:#000;padding:0 7px;border-radius:3px;margin:0 2px}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+#obj{position:absolute;top:16px;left:16px;background:rgba(0,0,0,.55);border-left:4px solid var(--red);padding:8px 14px;max-width:70vw}
+#obj small{display:block;color:var(--red);letter-spacing:3px;font-size:12px}
+#objText{font-size:18px}
+#objDist{margin-left:10px;color:#ccc;font-size:14px}
+#arrow{position:absolute;top:80px;left:50%;margin-left:-14px;width:28px;text-align:center;font-size:26px;color:#ffd84a;text-shadow:0 0 6px #000}
+#cross{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,255,255,.8)}
+#prompt{position:absolute;top:58%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 14px;font-size:18px;display:none}
+#prompt b{background:#fff;color:#000;padding:0 7px;border-radius:3px;margin-right:6px}
+#sus{position:absolute;top:44%;left:50%;width:160px;margin-left:-80px;height:8px;background:rgba(0,0,0,.5);display:none;border:1px solid #fff}
+#sus div{height:100%;width:0;background:#ff3b30}
+#sus::before{content:'⚠ TERLIHAT';position:absolute;top:-22px;width:100%;text-align:center;font-size:13px;color:#ff6b60}
+#stance{position:absolute;bottom:16px;left:16px;font-size:14px;color:#ccc;background:rgba(0,0,0,.4);padding:4px 10px}
+.lb{position:fixed;left:0;right:0;height:0;background:#000;z-index:20;transition:height .6s}
+#lbTop{top:0}#lbBot{bottom:0}
+body.cine .lb{height:11vh}
+body.cine #hud{display:none}
+#sub{position:fixed;bottom:13vh;left:50%;transform:translateX(-50%);width:min(860px,92vw);text-align:center;font-family:'Special Elite',monospace;font-size:clamp(16px,2.3vw,22px);
+ line-height:1.5;z-index:25;text-shadow:0 2px 4px #000,0 0 12px #000}
+#skip{position:fixed;bottom:2vh;right:16px;z-index:26;font-size:13px;color:#aaa;display:none}
+body.cine #skip{display:block}
+#dialog{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:min(760px,94vw);background:rgba(15,10,5,.88);border:2px solid var(--paper);padding:14px 20px;z-index:30}
+#dName{color:#ffd84a;font-size:18px;letter-spacing:2px}
+#dText{font-family:'Special Elite',monospace;font-size:19px;line-height:1.5;margin:6px 0}
+#dialog small{color:#999}
+#fact{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-1deg);width:min(520px,92vw);background:var(--paper);color:var(--ink);padding:22px 26px;z-index:40;
+ box-shadow:0 10px 40px rgba(0,0,0,.7);font-family:'Special Elite',monospace}
+#fact small{color:var(--red);letter-spacing:3px;font-family:'Oswald'}
+#fact h3{font-family:'Oswald';font-size:28px;margin:6px 0 10px}
+#fact p{line-height:1.6;font-size:16px}
+#fact button{font-size:16px;padding:8px 24px}
+#fade{position:fixed;inset:0;background:#000;opacity:1;pointer-events:none;z-index:45;transition:opacity .8s}
+#pause{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:35;font-size:28px;letter-spacing:3px;cursor:pointer}
+#chapter{position:fixed;top:30%;left:0;right:0;text-align:center;z-index:28;opacity:0;transition:opacity 1s;pointer-events:none}
+#chapter b{display:block;font-size:clamp(36px,7vw,64px);letter-spacing:8px;color:var(--red);text-shadow:0 0 20px #000}
+#chapter span{font-family:'Special Elite',monospace;font-size:clamp(16px,2.5vw,24px);text-shadow:0 0 10px #000}
+#flash{position:absolute;inset:0;background:#f00;opacity:0;transition:opacity .3s}
+#toast{position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:40px;letter-spacing:4px;color:#ff4b40;text-shadow:0 0 10px #000;display:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="menu"><div class="box">
+  <h1>AREK <span>SUROBOYO</span></h1>
+  <h2>— 1945 —</h2>
+  <p>Surabaya, September 1945. Kemerdekaan baru seumur jagung, tapi bendera penjajah kembali berkibar di jantung kota. Jadilah salah satu pemuda yang berdiri mempertahankan Merah Putih.</p>
+  <button id="startBtn">MULAI</button>
+  <div class="ctrl"><b>W A S D</b> gerak &nbsp; <b>Mouse</b> lihat &nbsp; <b>Shift</b> lari &nbsp; <b>C</b> merunduk<br>
+  <b>E</b> interaksi &nbsp; <b>Spasi</b> lanjut / lewati &nbsp; <b>M</b> suara on/off<br>Pakai headphone untuk pengalaman terbaik 🎧</div>
+</div></div>
+
+<div id="hud" hidden>
+  <div id="obj"><small>MISI</small><span id="objText"></span><span id="objDist"></span></div>
+  <div id="arrow">▲</div>
+  <div id="cross"></div>
+  <div id="prompt"></div>
+  <div id="sus"><div></div></div>
+  <div id="toast"></div>
+  <div id="stance">BERDIRI</div>
+  <div id="flash"></div>
+</div>
+<div id="lbTop" class="lb"></div><div id="lbBot" class="lb"></div>
+<div id="sub"></div>
+<div id="skip">[Spasi] lanjut &nbsp; [Enter] lewati adegan</div>
+<div id="chapter"><b></b><span></span></div>
+<div id="dialog" hidden><div id="dName"></div><div id="dText"></div><small>[E / Spasi] lanjut</small></div>
+<div id="fact" hidden><small>FAKTA SEJARAH</small><h3></h3><p></p><button>[E] LANJUT</button></div>
+<div id="pause" hidden>KLIK UNTUK MELANJUTKAN</div>
+<div id="end" hidden><div class="box">
+  <h2>10 NOVEMBER</h2>
+  <h1>HARI <span>PAHLAWAN</span></h1>
+  <p>"Bangsa yang besar adalah bangsa yang menghargai jasa pahlawannya."<br><br>
+  Pertempuran Surabaya adalah salah satu pertempuran terbesar dalam Revolusi Nasional Indonesia. Sejak 1959, tanggal 10 November ditetapkan sebagai Hari Pahlawan.</p>
+  <button onclick="location.reload()">MAIN LAGI</button>
+</div></div>
+<div id="fade"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const R = THREE, $ = s => document.querySelector(s);
+const rand = (a, b) => a + Math.random() * (b - a);
+const flags = [];
+
+/* ================= AUDIO (semua disintesis, tanpa file eksternal) ================= */
+const A = { ctx: null, muted: false, scale: 'act1', step: 0, mel: 2 };
+function initAudio() {
+  const ac = new (window.AudioContext || window.webkitAudioContext)(); A.ctx = ac;
+  A.master = ac.createGain(); A.master.gain.value = .85; A.master.connect(ac.destination);
+  A.music = ac.createGain(); A.music.gain.value = .2; A.music.connect(A.master);
+  A.sfx = ac.createGain(); A.sfx.connect(A.master);
+  const len = ac.sampleRate * 2, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  A.noise = b;
+  const loopNoise = (type, f, g) => {
+    const s = ac.createBufferSource(); s.buffer = b; s.loop = true;
+    const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f;
+    const gn = ac.createGain(); gn.gain.value = g; s.connect(fl).connect(gn).connect(A.master); s.start(); return gn;
+  };
+  A.wind = loopNoise('lowpass', 380, .06);
+  A.radio = loopNoise('bandpass', 2600, 0);
+  A.crowd = loopNoise('bandpass', 700, 0);
+  setInterval(musicTick, 250);
+}
+function nz(dur, type, freq, vol, q = 1, att = .005) {
+  if (!A.ctx) return; const ac = A.ctx, t = ac.currentTime;
+  const s = ac.createBufferSource(); s.buffer = A.noise;
+  const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + att);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + att + dur);
+  s.connect(f).connect(g).connect(A.sfx); s.start(t, Math.random()); s.stop(t + att + dur + .1);
+}
+function tone(freq, dur, vol, type = 'sine', slide, dest) {
+  if (!A.ctx) return; const ac = A.ctx, t = ac.currentTime;
+  const o = ac.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(dest || A.sfx); o.start(t); o.stop(t + dur + .05);
+}
+const SFX = {
+  step(soft) { nz(.08, 'lowpass', rand(450, 750), soft ? .06 : .16) },
+  boom(d = 10) { const v = Math.max(.12, 1.3 - d / 35); nz(2.4, 'lowpass', 240, v, 1, .01); tone(60, 1.3, v, 'sine', 28); nz(.35, 'bandpass', 900, v * .5) },
+  shot(d = 40) { nz(.16, 'bandpass', rand(900, 1900), Math.max(.04, .45 - d / 140), .8, .002) },
+  blip() { tone(880, .1, .12, 'square') },
+  ok() { tone(660, .15, .18, 'triangle'); setTimeout(() => tone(990, .3, .18, 'triangle'), 120) },
+  alert() { tone(320, .5, .3, 'sawtooth', 140) },
+  tick() { tone(1500, .04, .05, 'square') },
+  tear() { nz(.7, 'highpass', 2400, .5, .5, .01); setTimeout(() => nz(.4, 'highpass', 3000, .4, .5, .01), 250) },
+  whistle() { tone(1600, 1.1, .12, 'sine', 400) },
+  cheer() { nz(4, 'bandpass', 850, .6, .4, 1); nz(3.5, 'bandpass', 1700, .3, .6, .8) }
+};
+const SCALES = { act1: [0, 240, 480, 720, 960, 1200, 1440, 1680], act2: [0, 120, 270, 540, 670, 800, 1200, 1320] };
+function pluck(f, v = .25) {
+  tone(f, 1.4, v, 'triangle', null, A.music); tone(f * 2.01, .6, v * .3, 'sine', null, A.music);
+}
+function musicTick() {
+  if (!A.ctx || A.musicOff) return;
+  const s = SCALES[A.scale], base = A.scale === 'act1' ? 196 : 165, p = A.step++ % 16;
+  if (Math.random() < (A.scale === 'act1' ? .5 : .38)) {
+    A.mel = Math.max(0, Math.min(s.length - 1, A.mel + [1, -1, 2, -2, 0, 1, -1][Math.floor(Math.random() * 7)]));
+    pluck(base * 2 * Math.pow(2, s[A.mel] / 1200));
+  }
+  if (p % 4 === 0) pluck(base * Math.pow(2, s[(p / 4) % 3 * 2] / 1200), .18);
+  if (p === 0) { tone(base / 4, 5, .5, 'sine', null, A.music); tone(base / 4 * 1.01, 5, .3, 'sine', null, A.music) }
+  if (A.scale === 'act2' && (p === 6 || p === 14)) { tone(95, .25, .4, 'sine', 60, A.music) }
+}
+function speak(text, pitch = 1, rate = 1) {
+  if (!window.speechSynthesis || A.muted) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/[“”"]/g, ''));
+  u.lang = 'id-ID'; u.rate = rate; u.pitch = pitch;
+  const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('id'));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) speechSynthesis.getVoices();
+
+/* ================= RENDERER & SCENE ================= */
+const renderer = new R.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = R.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+const scene = new R.Scene();
+scene.fog = new R.Fog(0xd9d2bd, 35, 170);
+const camera = new R.PerspectiveCamera(72, innerWidth / innerHeight, .1, 600);
+camera.rotation.order = 'YXZ';
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight) });
+
+const hemi = new R.HemisphereLight(0xe8f0ff, 0x6b5a40, .75); scene.add(hemi);
+const sun = new R.DirectionalLight(0xfff0d0, 1.05); sun.position.set(50, 90, 35);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, far: 300 });
+scene.add(sun);
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new R.CanvasTexture(c); t.wrapS = t.wrapT = R.RepeatWrapping; t.anisotropy = 4; return t;
+}
+function speckle(g, w, h, n, a) { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * a})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2) } }
+// langit
+const skyTex = (top, mid, bot) => canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(.5, mid); gr.addColorStop(1, bot); g.fillStyle = gr; g.fillRect(0, 0, w, h) });
+const sky = new R.Mesh(new R.SphereGeometry(400, 32, 16), new R.MeshBasicMaterial({ map: skyTex('#4d86c4', '#a9c6df', '#efe2c0'), side: R.BackSide, fog: false }));
+scene.add(sky);
+
+const groundTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#8a7a5a'; g.fillRect(0, 0, w, h); speckle(g, w, h, 3000, .25); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(70,100,40,${Math.random() * .4})`; g.fillRect(Math.random() * w, Math.random() * h, 3, 3) } });
+groundTex.repeat.set(60, 60);
+const ground = new R.Mesh(new R.PlaneGeometry(400, 400), new R.MeshLambertMaterial({ map: groundTex }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const roadTex = canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#4a4740'; g.fillRect(0, 0, w, h); speckle(g, w, h, 4000, .35); g.fillStyle = '#d8d0b0'; g.fillRect(w / 2 - 3, 0, 6, h / 2) });
+roadTex.repeat.set(1, 20);
+const road = new R.Mesh(new R.PlaneGeometry(12, 180), new R.MeshLambertMaterial({ map: roadTex }));
+road.rotation.x = -Math.PI / 2; road.position.set(0, .02, -5); road.receiveShadow = true; scene.add(road);
+
+/* ================= GEOMETRY HELPERS ================= */
+const colliders = [];
+function box(w, h, d, x, y, z, mat, collide = true, shadow = true) {
+  const m = new R.Mesh(new R.BoxGeometry(w, h, d), mat); m.position.set(x, y + h / 2, z);
+  m.castShadow = shadow; m.receiveShadow = true; scene.add(m);
+  if (collide) colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2, y0: y, y1: y + h });
+  return m;
+}
+const lam = c => new R.MeshLambertMaterial({ color: c });
+function wallMat(base, win, rw, rh, trim = '#5b3a1e') {
+  const t = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h); speckle(g, w, h, 1500, .12);
+    g.fillStyle = trim; g.fillRect(36, 26, 56, 70); g.fillStyle = win; g.fillRect(41, 31, 46, 60);
+    g.fillStyle = trim; g.fillRect(62, 31, 4, 60); g.fillRect(41, 58, 46, 3);
+    g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, 120, w, 8);
+  });
+  t.repeat.set(rw, rh); return new R.MeshLambertMaterial({ map: t });
+}
+function building(x, z, w, d, h, color, roofColor = 0x8c3b22) {
+  box(w, h, d, x, 0, z, wallMat(color, '#2a3540', Math.max(1, Math.round(w / 4)), Math.max(1, Math.round(h / 4))));
+  const r = new R.Mesh(new R.ConeGeometry(Math.max(w, d) * .75, 3, 4), lam(roofColor));
+  r.rotation.y = Math.PI / 4; r.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d));
+  r.position.set(x, h + 1.5, z); r.castShadow = true; scene.add(r);
+}
+function label(text, color = '#ffd84a') {
+  const t = canvasTex(256, 64, (g, w, h) => { g.font = 'bold 30px Oswald, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 10, w, 44); g.fillStyle = color; g.fillText(text, w / 2, 44) });
+  const s = new R.Sprite(new R.SpriteMaterial({ map: t, depthTest: false })); s.scale.set(2, .5, 1); s.position.y = 2.25; return s;
+}
+
+/* ================= KOTA ================= */
+const sidewalk = lam(0xb8ad94);
+box(4, .15, 180, -8, 0, -5, sidewalk, false, false);
+box(4, .15, 180, 8, 0, -5, sidewalk, false, false);
+const colors = ['#e8dcc0', '#d9c9a3', '#efe6d2', '#c9b48a', '#e2d5b5', '#d0c2a0'];
+for (let z = 70; z > -80; z -= 13) {
+  building(-15, z, 8, 11, rand(5, 9), colors[Math.floor(Math.random() * 6)]);
+  if (z > -14 || z < -46) building(15, z, 8, 11, rand(5, 9), colors[Math.floor(Math.random() * 6)]);
+}
+// langgar (tempat mengungsi)
+box(14, 6, 9, 0, 0, -88, wallMat('#f2efe6', '#3a4a3a', 4, 2, '#2f5a3a'));
+const dome = new R.Mesh(new R.SphereGeometry(3.5, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), lam(0x2f7a4a)); dome.position.set(0, 6, -88); dome.castShadow = true; scene.add(dome);
+const shelterSign = label('LANGGAR (AMAN)', '#8cff9c'); shelterSign.position.set(0, 4, -83); shelterSign.scale.set(4, 1, 1); scene.add(shelterSign);
+// pohon & lampu
+function tree(x, z) {
+  box(.35, 3, .35, x, 0, z, lam(0x5b3d22), true);
+  const c = new R.Mesh(new R.SphereGeometry(rand(1.6, 2.3), 8, 6), lam(new R.Color().setHSL(.28, .45, rand(.22, .32))));
+  c.position.set(x, 3.8, z); c.castShadow = true; scene.add(c);
+}
+for (let z = 60; z > -78; z -= 16) { tree(-9.4, z + 4); if (z > -12 || z < -48) tree(9.4, z - 3) }
+for (let z = 66; z > -78; z -= 20) { box(.15, 4.5, .15, -6.6, 0, z, lam(0x222222), true); const l = box(.6, .3, .6, -6.6, 4.5, z, new R.MeshBasicMaterial({ color: 0xfff2c0 }), false) }
+// sangkar karung pasir & gerobak
+function sandbags(x, z, len, rot = 0) {
+  for (let i = 0; i < len; i++) for (let j = 0; j < 2; j++) {
+    const m = box(.9, .35, .5, 0, 0, 0, lam(0x9d8b62), false);
+    m.position.set(x + Math.cos(rot) * (i * .9 + (j ? .45 : 0)), .175 + j * .35, z - Math.sin(rot) * (i * .9 + (j ? .45 : 0)));
+    m.rotation.y = rot;
+  }
+  const cx = x + Math.cos(rot) * len * .45, cz = z - Math.sin(rot) * len * .45;
+  colliders.push({ x0: cx - Math.abs(Math.cos(rot)) * len * .5 - .3, x1: cx + Math.abs(Math.cos(rot)) * len * .5 + .3, z0: cz - Math.abs(Math.sin(rot)) * len * .5 - .3, z1: cz + Math.abs(Math.sin(rot)) * len * .5 + .3, y0: 0, y1: .7 });
+}
+// pos pemuda
+sandbags(-11, 26, 6, 0); sandbags(-11, 14, 6, 0);
+box(1.6, .8, .9, -9.3, 0, 21, lam(0x6b4a2a));
+const radio = box(.6, .4, .35, -9.3, .8, 21, lam(0x3a2a1a), false);
+const tent = new R.Mesh(new R.ConeGeometry(3, 2.4, 4), lam(0x5d6b3a)); tent.position.set(-9, 3.3, 20); tent.rotation.y = Math.PI / 4; scene.add(tent);
+box(.1, 2.2, .1, -7, 0, 18, lam(0x5b3d22), false); box(.1, 2.2, .1, -7, 0, 22, lam(0x5b3d22), false);
+const posFlag = makeFlag(['#c8102e', '#ffffff'], 1.2, .8); posFlag.position.set(-7, 3.2, 26); scene.add(posFlag);
+box(.06, 3.6, .06, -7, 0, 26, lam(0xdddddd), false);
+const posSign = label('POS PEMUDA'); posSign.position.set(-8, 3.6, 20); scene.add(posSign);
+// barikade di jalan
+sandbags(-3, -55, 4, 0); sandbags(2, -62, 4, 0); sandbags(-4, 5, 3, 0.3);
+box(1.4, 1, 2.4, 4.5, 0, 28, lam(0x7a5530)); // gerobak
+box(1, .8, 1, 5, 0, -8, lam(0x6b4a2a)); box(.8, .6, .8, 5.6, .8, -8.2, lam(0x7a5a35), false);
+
+/* ================= HOTEL YAMATO ================= */
+const H = { x0: 10, x1: 40, z0: -38, z1: -22, h: 12 };
+const hotelMat = (rw, rh) => wallMat('#f3ecdc', '#3a3a32', rw, rh, '#6e4a2a');
+box(.6, H.h, 7, 10.3, 0, -34.5, hotelMat(2, 3));          // depan kiri
+box(.6, H.h, 7, 10.3, 0, -25.5, hotelMat(2, 3));          // depan kanan
+box(.6, H.h - 3, 2, 10.3, 3, -30, hotelMat(1, 2), false); // atas pintu
+box(.6, H.h, 4.6, 39.7, 0, -35.7, hotelMat(1, 3));        // belakang
+box(.6, H.h, 7.6, 39.7, 0, -26.2, hotelMat(2, 3));
+box(.6, H.h - 3, 2.8, 39.7, 3, -32, hotelMat(1, 2), false);
+box(30, H.h, .6, 25, 0, -37.7, hotelMat(7, 3));            // samping
+box(30, H.h, .6, 25, 0, -22.3, hotelMat(7, 3));
+const roofMat = lam(0xa49a88);
+box(30.4, .4, 16.4, 25, H.h, -30, roofMat, false);
+// parapet atap
+box(30.4, 1, .3, 25, H.h + .4, -37.9, roofMat, false); box(30.4, 1, .3, 25, H.h + .4, -22.1, roofMat, false);
+box(.3, 1, 16.4, 10.05, H.h + .4, -30, roofMat, false); box(.3, 1, 16.4, 39.95, H.h + .4, -30, roofMat, false);
+// menara hotel
+box(5, 6, 5, 37, H.h, -35, hotelMat(1, 1), false);
+const tCap = new R.Mesh(new R.ConeGeometry(3.6, 3, 4), lam(0x7a3b22)); tCap.rotation.y = Math.PI / 4; tCap.position.set(37, H.h + 7.5, -35); scene.add(tCap);
+// papan nama
+const signTex = canvasTex(512, 96, (g, w, h) => { g.fillStyle = '#2b1d10'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2d98a'; g.font = 'bold 64px Oswald, serif'; g.textAlign = 'center'; g.fillText('HOTEL YAMATO', w / 2, 70) });
+const sign = new R.Mesh(new R.PlaneGeometry(8, 1.5), new R.MeshBasicMaterial({ map: signTex }));
+sign.position.set(9.9, 4, -30); sign.rotation.y = -Math.PI / 2; scene.add(sign);
+// interior
+box(29, .05, 15, 25, .02, -30, lam(0x7b4a2e), false, false);
+const lobbyLight = new R.PointLight(0xffd59a, .9, 30); lobbyLight.position.set(25, 7, -30); scene.add(lobbyLight);
+box(4, 1.1, 1, 18, 0, -26.5, lam(0x4a2e1a));                  // meja resepsionis
+[[20, -34], [28, -25.5], [27, -35], [33, -29], [16, -31.5]].forEach(([x, z]) => box(1.4, 1.2, 1.4, x, 0, z, lam(0x8a6a3a)));
+[[15, -27], [15, -33], [24, -27], [24, -33], [32, -33]].forEach(([x, z]) => box(.6, H.h - .1, .6, x, 0, z, lam(0xe8e0cc)));
+// tangga
+const stairsPos = new R.Vector3(12.6, 0, -36);
+for (let i = 0; i < 6; i++) box(2.2, .3 + i * .3, .5, 12.4, 0, -33.6 - i * .5, lam(0x5b3d22), false);
+const stairSign = label('TANGGA ↑', '#ffffff'); stairSign.position.set(12.5, 2.6, -35.5); scene.add(stairSign);
+
+/* ================= BENDERA ================= */
+function flagTex(cols) { return canvasTex(96, 64, (g, w, h) => { cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(0, i * h / cols.length, w, h / cols.length + 1) }) }) }
+function makeFlag(cols, w, h) {
+  const geo = new R.PlaneGeometry(w, h, 14, 6); geo.translate(w / 2, 0, 0);
+  const m = new R.Mesh(geo, new R.MeshLambertMaterial({ map: flagTex(cols), side: R.DoubleSide }));
+  m.castShadow = true; m.userData = { w, base: Float32Array.from(geo.attributes.position.array) }; flags.push(m); return m;
+}
+const pole = new R.Vector3(14, H.h, -30);
+box(.12, 8, .12, pole.x, H.h, pole.z, lam(0xcccccc), false);
+const bigFlag = makeFlag(['#ae1c28', '#ffffff', '#21468b'], 3, 2);
+bigFlag.position.set(pole.x, H.h + 7, pole.z); bigFlag.rotation.y = Math.PI / 2; scene.add(bigFlag);
+function updateFlags(t) {
+  flags.forEach((f, k) => {
+    const p = f.geometry.attributes.position, b = f.userData.base, w = f.userData.w;
+    for (let i = 0; i < p.count; i++) { const x = b[i * 3]; p.array[i * 3 + 2] = Math.sin(x * 2.2 - t * 6 + k) * .18 * (x / w) + Math.sin(b[i * 3 + 1] * 3 + t * 4) * .04 * (x / w) }
+    p.needsUpdate = true; f.geometry.computeVertexNormals();
+  });
+}
+
+/* ================= KARAKTER ================= */
+function human(o = {}) {
+  const g = new R.Group(), m = c => lam(c);
+  const skin = m(o.skin || 0x8d5a3b), shirt = m(o.shirt || 0xeeeeee), pants = m(o.pants || 0x333333);
+  const add = (geo, mat, x, y, z, parent = g) => { const me = new R.Mesh(geo, mat); me.position.set(x, y, z); me.castShadow = true; parent.add(me); return me };
+  add(new R.BoxGeometry(.5, .65, .28), shirt, 0, 1.15, 0);
+  add(new R.SphereGeometry(.17, 12, 10), skin, 0, 1.65, 0);
+  const limb = (x, y, geo, mat, oy) => { const p = new R.Group(); p.position.set(x, y, 0); g.add(p); add(geo, mat, 0, oy, 0, p); return p };
+  const legL = limb(-.13, .82, new R.BoxGeometry(.19, .82, .21), pants, -.41), legR = limb(.13, .82, new R.BoxGeometry(.19, .82, .21), pants, -.41);
+  const armL = limb(-.33, 1.45, new R.BoxGeometry(.14, .62, .16), shirt, -.3), armR = limb(.33, 1.45, new R.BoxGeometry(.14, .62, .16), shirt, -.3);
+  if (o.hat === 'peci') add(new R.CylinderGeometry(.15, .16, .13, 14), m(0x111111), 0, 1.8, 0);
+  if (o.hat === 'ikat') add(new R.CylinderGeometry(.176, .176, .07, 14, 1, true), m(0xc8102e), 0, 1.72, 0);
+  if (o.hat === 'helm') { add(new R.SphereGeometry(.21, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), m(0x4b5320), 0, 1.68, 0); add(new R.BoxGeometry(.08, .9, .08), m(0x3a2a1a), .1, 1.15, -.2).rotation.z = .5 }
+  if (o.hat === 'caping') { const c = add(new R.ConeGeometry(.42, .2, 16), m(0xc9a861), 0, 1.86, 0) }
+  if (o.name) { const l = label(o.name); g.add(l) }
+  g.userData = { legL, legR, armL, armR, ph: Math.random() * 6, goal: null, speed: 0 };
+  scene.add(g); return g;
+}
+function animHuman(h, spd, dt) {
+  const u = h.userData; u.ph += dt * (2 + spd * 2.2);
+  const a = Math.sin(u.ph) * .7 * Math.min(1, spd / 2);
+  u.legL.rotation.x = a; u.legR.rotation.x = -a; u.armL.rotation.x = -a * .8; u.armR.rotation.x = a * .8;
+}
+function walkTo(h, goal, dt, speed = 2.6) {
+  const d = new R.Vector3().subVectors(goal, h.position); d.y = 0; const L = d.length();
+  if (L > .25) { const s = Math.min(L, speed * dt); h.position.addScaledVector(d.normalize(), s); h.rotation.y = Math.atan2(d.x, d.z); animHuman(h, speed, dt); return false }
+  animHuman(h, 0, dt); return true;
+}
+
+const mat = human({ name: 'Cak Mat', shirt: 0xf3efe0, pants: 0x3b3a30, hat: 'peci' }); mat.position.set(-8.2, .15, 18.5); mat.rotation.y = Math.PI / 2;
+const youthsDef = [
+  { name: 'Dul', pos: [6.5, 42], line: ['Bendera Londo nang Yamato? Kurang ajar!', 'Aku melu, Rek! Tak gawa bambu runcingku.'] },
+  { name: 'Sri', pos: [-7, -4], line: ['Aku dari dapur umum. Para pemuda butuh semangat dan makanan.', 'Aku ikut ke hotel. Merdeka!'] },
+  { name: 'Koh Liem', pos: [7.5, 8], line: ['Tokoku dekat Tunjungan. Semua orang Surabaya, apa pun asalnya, cinta kemerdekaan.', 'Ayo berangkat bersama!'] },
+];
+const youths = youthsDef.map((y, i) => { const h = human({ name: y.name, shirt: [0xd6c7a1, 0xb5523b, 0x3d5a80][i], pants: [0x2f2a20, 0x5a3a2a, 0x222222][i], hat: ['ikat', null, 'peci'][i] }); h.position.set(y.pos[0], .15, y.pos[1]); h.userData.def = y; return h });
+const crowd = []; const crowdSpots = [];
+for (let i = 0; i < 18; i++) crowdSpots.push(new R.Vector3(rand(-2, 7), 0, rand(-41, -19)));
+
+/* ================= PLAYER & INPUT ================= */
+const P = { pos: new R.Vector3(-5, 0, 32), yaw: 0, pitch: 0, eye: 1.65, crouch: false, roof: false, stepT: 0, floor: 0 };
+const keys = {}; let mode = 'menu', T = 0, shake = 0;
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'KeyC') { P.crouch = !P.crouch; $('#stance').textContent = P.crouch ? 'MERUNDUK' : 'BERDIRI' }
+  if (e.code === 'KeyM') { A.muted = !A.muted; if (A.master) A.master.gain.value = A.muted ? 0 : .85; if (A.muted && window.speechSynthesis) speechSynthesis.cancel() }
+  if (e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); action(e.code) }
+  if (e.code === 'Enter' && mode === 'cut') skipCut();
+});
+addEventListener('keyup', e => keys[e.code] = false);
+const canvas = renderer.domElement;
+const lock = () => { if (mode !== 'menu' && mode !== 'end') canvas.requestPointerLock() };
+canvas.addEventListener('click', lock); $('#pause').addEventListener('click', lock);
+document.addEventListener('pointerlockchange', () => { $('#pause').hidden = !(document.pointerLockElement !== canvas && mode === 'play') });
+addEventListener('mousemove', e => {
+  if (document.pointerLockElement !== canvas || mode !== 'play') return;
+  P.yaw -= e.movementX * .0022; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - e.movementY * .0022));
+});
+function action(code) {
+  if (mode === 'dialog') return nextLine();
+  if (mode === 'fact') return closeFact();
+  if (mode === 'cut' && code === 'Space') return nextShot();
+  if (mode === 'play' && code === 'KeyE' && curI) { SFX.blip(); curI.use() }
+}
+function blocked(x, z, r, feet) {
+  for (const c of colliders) {
+    if (c.y1 < feet + .45 || c.y0 > feet + 1.5) continue;
+    const cx = Math.max(c.x0, Math.min(x, c.x1)), cz = Math.max(c.z0, Math.min(z, c.z1));
+    if ((x - cx) ** 2 + (z - cz) ** 2 < r * r) return true;
+  }
+  return false;
+}
+function updatePlayer(dt) {
+  const f = new R.Vector3(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)), r = new R.Vector3(Math.cos(P.yaw), 0, -Math.sin(P.yaw));
+  const mv = new R.Vector3();
+  if (keys.KeyW) mv.add(f); if (keys.KeyS) mv.sub(f); if (keys.KeyD) mv.add(r); if (keys.KeyA) mv.sub(r);
+  const running = (keys.ShiftLeft || keys.ShiftRight) && !P.crouch;
+  const spd = P.crouch ? 2.3 : running ? 7.5 : 4.4;
+  if (mv.lengthSq()) {
+    mv.normalize().multiplyScalar(spd * dt);
+    if (!blocked(P.pos.x + mv.x, P.pos.z, .38, P.floor)) P.pos.x += mv.x;
+    if (!blocked(P.pos.x, P.pos.z + mv.z, .38, P.floor)) P.pos.z += mv.z;
+    P.stepT -= dt * spd;
+    if (P.stepT < 0) { P.stepT = 2.1; SFX.step(P.crouch) }
+  }
+  if (P.roof) { P.pos.x = Math.max(H.x0 + .7, Math.min(H.x1 - .7, P.pos.x)); P.pos.z = Math.max(H.z0 + .7, Math.min(H.z1 - .7, P.pos.z)) }
+  else { P.pos.x = Math.max(-11, Math.min(48, P.pos.x)); P.pos.z = Math.max(-82, Math.min(78, P.pos.z)) }
+  P.eye += ((P.crouch ? 1.0 : 1.65) - P.eye) * Math.min(1, dt * 10);
+  const bob = mv.lengthSq() ? Math.sin(T * (running ? 13 : 9)) * (running ? .06 : .035) : 0;
+  camera.position.set(P.pos.x, P.floor + P.eye + bob, P.pos.z);
+  camera.rotation.set(P.pitch, P.yaw, 0);
+}
+function teleport(x, z, yaw, floor = 0) { P.pos.set(x, 0, z); P.yaw = yaw; P.pitch = 0; P.floor = floor }
+
+/* ================= INTERAKSI ================= */
+let interacts = [], curI = null;
+function addI(obj, text, use, r = 2.4) { const it = { obj, text, use, r }; interacts.push(it); return it }
+function remI(it) { interacts = interacts.filter(i => i !== it) }
+function pos3(o) { return o.isVector3 ? o : o.position }
+function updateInteract() {
+  curI = null; let best = 1e9;
+  for (const it of interacts) { const p = pos3(it.obj); const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < it.r && d < best && Math.abs((p.y || 0) - P.floor) < 3) { best = d; curI = it } }
+  const el = $('#prompt'); if (curI && mode === 'play') { el.innerHTML = `<b>E</b>${curI.text}`; el.style.display = 'block' } else el.style.display = 'none';
+}
+
+/* ================= OBJEKTIF & MARKER ================= */
+const G = { target: null };
+const beam = new R.Mesh(new R.CylinderGeometry(.35, .35, 40, 12, 1, true), new R.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: .18, depthWrite: false, side: R.DoubleSide }));
+const gem = new R.Mesh(new R.OctahedronGeometry(.35), new R.MeshBasicMaterial({ color: 0xffd84a }));
+scene.add(beam, gem);
+function setObj(text, target) { $('#objText').textContent = text; G.target = target; G.objFn = typeof text === 'function' ? text : null; SFX.ok() }
+function updateMarker() {
+  const tg = G.target ? G.target() : null;
+  beam.visible = gem.visible = !!tg && mode === 'play';
+  $('#arrow').style.display = tg ? 'block' : 'none';
+  if (!tg) { $('#objDist').textContent = ''; return }
+  beam.position.set(tg.x, tg.y + 20, tg.z); gem.position.set(tg.x, tg.y + 2.8 + Math.sin(T * 3) * .15, tg.z); gem.rotation.y = T * 2;
+  const dx = tg.x - P.pos.x, dz = tg.z - P.pos.z;
+  const fx = -Math.sin(P.yaw) * dx - Math.cos(P.yaw) * dz, rx = Math.cos(P.yaw) * dx - Math.sin(P.yaw) * dz;
+  $('#arrow').style.transform = `rotate(${Math.atan2(rx, fx)}rad)`;
+  $('#objDist').textContent = Math.round(Math.hypot(dx, dz)) + ' m';
+}
+
+/* ================= UI: DIALOG, FAKTA, CUTSCENE ================= */
+let dlg = null;
+function dialog(name, lines, done, opts = {}) { dlg = { name, lines, i: 0, done, opts }; mode = 'dialog'; $('#dialog').hidden = false; showLine() }
+function showLine() { $('#dName').textContent = dlg.name; $('#dText').textContent = dlg.lines[dlg.i]; speak(dlg.lines[dlg.i], dlg.opts.pitch || 1, dlg.opts.rate || 1.02) }
+function nextLine() { dlg.i++; SFX.tick(); if (dlg.i < dlg.lines.length) return showLine(); $('#dialog').hidden = true; if (window.speechSynthesis) speechSynthesis.cancel(); mode = 'play'; const d = dlg.done; dlg = null; d && d() }
+let factDone = null;
+function fact(title, text, done) { mode = 'fact'; factDone = done; $('#fact h3').textContent = title; $('#fact p').textContent = text; $('#fact').hidden = false; SFX.ok() }
+function closeFact() { $('#fact').hidden = true; mode = 'play'; const d = factDone; factDone = null; d && d() }
+$('#fact button').onclick = closeFact;
+function fadeOut(cb, hold = 300) { $('#fade').style.opacity = 1; setTimeout(() => { cb && cb(); setTimeout(() => $('#fade').style.opacity = 0, hold) }, 850) }
+function chapter(a, b) { const c = $('#chapter'); c.querySelector('b').textContent = a; c.querySelector('span').textContent = b; c.style.opacity = 1; setTimeout(() => c.style.opacity = 0, 4200) }
+function toast(t, ms = 1500) { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; setTimeout(() => e.style.display = 'none', ms) }
+
+let cut = null;
+const V = a => new R.Vector3(...a);
+function playCut(shots, onEnd) { cut = { shots, i: -1, t: 0, onEnd }; mode = 'cut'; document.body.classList.add('cine'); nextShot() }
+function nextShot() {
+  cut.i++; cut.t = 0;
+  if (cut.i >= cut.shots.length) return endCut();
+  const s = cut.shots[cut.i];
+  s.d = s.dur || Math.max(4, (s.text || '').length * .072 + 1.2);
+  $('#sub').textContent = s.text || '';
+  if (s.text && s.speak !== false) speak(s.text, s.pitch || .95, s.rate || .98);
+  s.fn && s.fn();
+}
+function skipCut() { if (!cut) return; while (cut && cut.i < cut.shots.length - 1) { cut.i++; const s = cut.shots[cut.i]; s.fn && s.fn() } endCut() }
+function endCut() {
+  if (!cut) return; const e = cut.onEnd; cut = null; $('#sub').textContent = ''; if (window.speechSynthesis) speechSynthesis.cancel();
+  document.body.classList.remove('cine'); mode = 'play'; e && e();
+}
+function updateCut(dt) {
+  const s = cut.shots[cut.i]; cut.t += dt; const k = Math.min(1, cut.t / s.d), e = k * k * (3 - 2 * k);
+  camera.position.lerpVectors(V(s.from), V(s.to || s.from), e);
+  camera.lookAt(V(s.look).lerp(V(s.look2 || s.look), e));
+  if (cut.t >= s.d) nextShot();
+}
+
+/* ================= PENJAGA (STEALTH) ================= */
+const guards = []; let stealth = false, sus = 0;
+function cone(range) {
+  const m = new R.Mesh(new R.CircleGeometry(range, 24, -0.7, 1.4), new R.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: .16, depthWrite: false, side: R.DoubleSide }));
+  m.rotation.x = -Math.PI / 2; m.rotation.z = Math.PI / 2; m.position.y = .06; return m;
+}
+function spawnGuards() {
+  [[[8.6, -36.5], [8.6, -23.5]], [[14, -29.8], [36, -29.8]], [[22, -36.3], [22, -23.8]], [[30, -24], [30, -36]]].forEach(path => {
+    const g = human({ shirt: 0x7a7448, pants: 0x5e5a38, skin: 0xe2b896, hat: 'helm' });
+    g.position.set(path[0][0], 0, path[0][1]); const c = cone(8); g.add(c);
+    guards.push({ m: g, path: path.map(p => new R.Vector3(p[0], 0, p[1])), i: 1, wait: 0, home: path[0] });
+  });
+}
+function losClear(a, b) {
+  const steps = Math.ceil(a.distanceTo(b) / .4);
+  for (let i = 1; i < steps; i++) {
+    const x = a.x + (b.x - a.x) * i / steps, z = a.z + (b.z - a.z) * i / steps;
+    for (const c of colliders) if (c.y1 > 1.3 && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return false;
+  }
+  return true;
+}
+function updateGuards(dt) {
+  let seen = 0;
+  guards.forEach(g => {
+    if (mode === 'play') {
+      if (g.wait > 0) { g.wait -= dt; g.m.rotation.y += Math.sin(T * 1.5) * dt * .8; animHuman(g.m, 0, dt) }
+      else if (walkTo(g.m, g.path[g.i], dt, 1.7)) { g.i = (g.i + 1) % g.path.length; g.wait = 2.2 }
+    }
+    if (!stealth || P.roof || mode !== 'play') return;
+    const d = new R.Vector3(P.pos.x - g.m.position.x, 0, P.pos.z - g.m.position.z), L = d.length();
+    const range = P.crouch ? 4.2 : 8;
+    const fwd = new R.Vector3(Math.sin(g.m.rotation.y), 0, Math.cos(g.m.rotation.y));
+    if (L < range && d.normalize().dot(fwd) > .76 && losClear(g.m.position, P.pos)) seen = Math.max(seen, (1.4 - L / range) * (P.crouch ? .9 : 1.6));
+    if (L < 1.2) seen = 5;
+  });
+  if (seen) sus += seen * dt; else sus = Math.max(0, sus - dt * .5);
+  $('#sus').style.display = stealth && sus > 0 ? 'block' : 'none';
+  $('#sus div').style.width = Math.min(100, sus * 100) + '%';
+  if (sus >= 1) caught();
+}
+function caught() {
+  sus = 0; mode = 'busy'; SFX.alert(); SFX.whistle(); toast('KETAHUAN!'); $('#flash').style.opacity = .5; setTimeout(() => $('#flash').style.opacity = 0, 300);
+  speak('Hei! Berhenti!', 1.2, 1.1);
+  fadeOut(() => { teleport(4, -45, -Math.PI / 2 - .4); guards.forEach(g => { g.m.position.set(g.home[0], 0, g.home[1]); g.i = 1; g.wait = 0 }); mode = 'play' });
+}
+
+/* ================= EFEK: PARTIKEL, API, ASAP ================= */
+const parts = [];
+const smokeTex = canvasTex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h) });
+function puff(pos, color, size, life, vel, grow = 2) {
+  if (parts.length > 260) return;
+  const s = new R.Sprite(new R.SpriteMaterial({ map: smokeTex, color, transparent: true, depthWrite: false, opacity: .9 }));
+  s.position.copy(pos); s.scale.setScalar(size); scene.add(s);
+  parts.push({ s, life, max: life, vel, grow });
+}
+function updateParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.life -= dt; if (p.life <= 0) { scene.remove(p.s); p.s.material.dispose(); parts.splice(i, 1); continue }
+    p.s.position.addScaledVector(p.vel, dt); p.s.scale.multiplyScalar(1 + p.grow * dt * .3); p.s.material.opacity = (p.life / p.max) * .8;
+  }
+}
+const boomLight = new R.PointLight(0xff8a30, 0, 40); scene.add(boomLight);
+function explode(pos) {
+  const d = pos.distanceTo(new R.Vector3(P.pos.x, P.floor, P.pos.z));
+  SFX.boom(d); shake = Math.max(shake, Math.max(0, 1 - d / 40));
+  boomLight.position.set(pos.x, 2, pos.z); boomLight.intensity = 6;
+  for (let i = 0; i < 10; i++) puff(pos.clone().add(V([rand(-1, 1), rand(0, 1.5), rand(-1, 1)])), new R.Color().setHSL(rand(.03, .1), 1, .55), rand(1.5, 2.5), .6, V([rand(-3, 3), rand(2, 6), rand(-3, 3)]), 4);
+  for (let i = 0; i < 12; i++) puff(pos.clone().add(V([rand(-1, 1), rand(.5, 2), rand(-1, 1)])), 0x333333, rand(2, 3), rand(2, 4), V([rand(-1, 1), rand(1.5, 3.5), rand(-1, 1)]), 2.5);
+}
+const fires = [];
+function addFire(x, y, z) {
+  const f = new R.Mesh(new R.ConeGeometry(1.2, 3, 7), new R.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: .85 }));
+  f.position.set(x, y + 1.5, z); scene.add(f); fires.push(f);
+}
+
+/* ================= BABAK II ================= */
+let act2 = false, shells = false, shellT = 3, pending = [], followers = [], warga = [], saved = 0, ambT = 2;
+const fireLight = new R.PointLight(0xff5a1a, 0, 60); fireLight.position.set(15, 8, 0); scene.add(fireLight);
+function setAct2() {
+  act2 = true; A.scale = 'act2';
+  scene.fog.color.set(0x5a3a2a); scene.fog.near = 15; scene.fog.far = 110;
+  sky.material.map = skyTex('#2a1a1a', '#7a3a1e', '#c8682a'); sky.material.needsUpdate = true;
+  hemi.color.set(0xffb38a); hemi.groundColor.set(0x3a2a20); hemi.intensity = .55;
+  sun.color.set(0xff9a5a); sun.intensity = .7; fireLight.intensity = 2;
+  [[-15, 9, 44], [15, 8, 31], [-15, 8, -20], [15, 9, -51], [-15, 7, 57], [15, 8, 5]].forEach(p => addFire(...p));
+  guards.forEach(g => scene.remove(g.m)); guards.length = 0; stealth = false;
+  crowd.forEach(c => scene.remove(c)); crowd.length = 0;
+  youths.forEach(y => { y.position.set(rand(-9, -8), .15, rand(15, 25)); y.userData.goal = null; y.rotation.y = Math.PI / 2 });
+  bigFlag.visible = true;
+  if (A.wind) A.wind.gain.value = .1;
+}
+function updateAct2(dt) {
+  if (!act2) return;
+  fires.forEach((f, i) => { f.scale.set(1 + Math.sin(T * 9 + i) * .15, 1 + Math.sin(T * 13 + i * 2) * .25, 1); if (Math.random() < dt * 6) puff(f.position.clone().add(V([0, 1.5, 0])), 0x2a2420, rand(2, 3.5), rand(4, 7), V([rand(.2, 1), rand(1.5, 3), rand(-.3, .3)]), 3) });
+  fireLight.intensity = 1.6 + Math.sin(T * 17) * .4 + Math.random() * .3;
+  boomLight.intensity = Math.max(0, boomLight.intensity - dt * 12);
+  ambT -= dt;
+  if (ambT < 0) { ambT = rand(.3, 2.2); Math.random() < .3 ? SFX.boom(rand(40, 90)) : (SFX.shot(rand(30, 90)), setTimeout(() => SFX.shot(rand(30, 90)), 120)) }
+  if (shells && mode === 'play') {
+    shellT -= dt;
+    if (shellT < 0 && P.pos.z > -74) {
+      shellT = rand(2.2, 4);
+      const p = V([P.pos.x + rand(-7, 7), 0, P.pos.z + rand(-12, 5)]);
+      const ring = new R.Mesh(new R.RingGeometry(1.8, 2.5, 24), new R.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: .7, side: R.DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, .08, p.z); scene.add(ring);
+      SFX.whistle(); pending.push({ p, t: 1.6, ring });
+    }
+  }
+  for (let i = pending.length - 1; i >= 0; i--) {
+    const s = pending[i]; s.t -= dt; s.ring.material.opacity = .4 + Math.sin(T * 20) * .3;
+    if (s.t <= 0) {
+      scene.remove(s.ring); pending.splice(i, 1); explode(s.p);
+      if (mode === 'play' && Math.hypot(P.pos.x - s.p.x, P.pos.z - s.p.z) < 2.6) hurt();
+    }
+  }
+  // warga mengikuti
+  followers.forEach((w, i) => {
+    if (w.userData.safe) return;
+    const back = V([Math.sin(P.yaw), 0, Math.cos(P.yaw)]).multiplyScalar(1.6 + i * 1.3);
+    const goal = V([P.pos.x + back.x + (i - 1) * .6, .15, P.pos.z + back.z]);
+    if (w.position.distanceTo(goal) > 1) walkTo(w, goal, dt, 7.3); else animHuman(w, 0, dt);
+    if (w.position.z < -73 && Math.abs(w.position.x) < 9) { w.userData.safe = true; saved++; SFX.ok(); toast(`${w.userData.n} SELAMAT!`, 1400); w.userData.goal = V([rand(-5, 5), .15, -83]); updEvacObj() }
+  });
+  warga.forEach(w => { if (w.userData.safe && w.userData.goal) walkTo(w, w.userData.goal, dt, 2) });
+}
+function hurt() {
+  mode = 'busy'; toast('TERKENA LEDAKAN!'); $('#flash').style.opacity = .7; setTimeout(() => $('#flash').style.opacity = 0, 400);
+  fadeOut(() => { teleport(-5, 20, 0); followers.forEach((w, i) => { if (!w.userData.safe) w.position.set(-5 + i, .15, 23) }); pending.forEach(s => scene.remove(s.ring)); pending = []; mode = 'play' }, 500);
+}
+
+/* ================= ALUR CERITA ================= */
+function intro() {
+  chapter('BABAK I', 'Insiden Bendera · 19 September 1945');
+  playCut([
+    { from: [-40, 45, 70], to: [-5, 28, 25], look: [10, 5, -20], text: 'Surabaya, 19 September 1945. Sebulan setelah Proklamasi Kemerdekaan, Merah Putih berkibar di seluruh penjuru kota.' },
+    { from: [-2, 6, -10], to: [3, 9, -22], look: [14, 16, -30], look2: [14, 19, -29], text: 'Namun pagi itu, sekelompok orang Belanda mengibarkan bendera merah-putih-biru di atas Hotel Yamato, Jalan Tunjungan. Tanpa izin pemerintah Indonesia.' },
+    { from: [-4, 3, 30], to: [-5.5, 2, 24], look: [-8, 1.5, 18.5], text: 'Kabar itu menyebar cepat. Arek-arek Suroboyo marah. Kamu, seorang pemuda kampung, bergegas ke pos pemuda.' },
+  ], () => {
+    teleport(-5, 27, Math.PI * .15);
+    setObj('Temui Cak Mat di pos pemuda', () => mat.position);
+    const it = addI(mat, 'Bicara dengan Cak Mat', () => dialog('Cak Mat', [
+      'Rek! Wis krungu durung? Londo ngibarno bendera merah putih biru nang Hotel Yamato!',
+      'Iki ngenyek kemerdekaan kita. Proklamasi wis diumumno, tapi mereka masih merasa berkuasa.',
+      'Ayo kumpulno arek-arek. Ada tiga kawan kita di sekitar jalan ini: Dul, Sri, dan Koh Liem. Ajak mereka ke depan hotel!'
+    ], () => { remI(it); rally() }));
+  });
+}
+let rallied = 0;
+function rally() {
+  const obj = () => `Ajak kawan berkumpul di Hotel Yamato (${rallied}/3)`;
+  $('#objText').textContent = obj(); SFX.ok();
+  G.target = () => { const y = youths.find(y => !y.userData.rallied); return y ? y.position : null };
+  youths.forEach((y, i) => {
+    const it = addI(y, 'Ajak ' + y.userData.def.name, () => dialog(y.userData.def.name, y.userData.def.line, () => {
+      remI(it); y.userData.rallied = true; y.userData.goal = V([rand(2, 6), .15, -26 - i * 3]); rallied++;
+      $('#objText').textContent = obj();
+      if (rallied === 3) fact('Hotel Yamato', 'Hotel ini dibangun tahun 1910 dengan nama Hotel Oranje. Saat pendudukan Jepang namanya diganti menjadi Hotel Yamato. Kini dikenal sebagai Hotel Majapahit di Jalan Tunjungan, Surabaya.', nego);
+    }));
+  });
+}
+function nego() {
+  for (let i = 0; i < 16; i++) { const c = human({ shirt: new R.Color().setHSL(rand(0, 1), .3, rand(.4, .8)).getHex(), pants: 0x2a2a2a, hat: ['peci', 'ikat', null, 'caping'][i % 4] }); c.position.copy(crowdSpots[i]); c.rotation.y = Math.PI / 2; crowd.push(c) }
+  youths.forEach((y, i) => { y.position.set(4 + i, .15, -27 - i * 2); y.rotation.y = Math.PI / 2; y.userData.goal = null });
+  spawnGuards();
+  playCut([
+    { from: [-6, 4, -12], to: [-3, 3, -22], look: [10, 3, -30], text: 'Ratusan warga berkumpul di depan Hotel Yamato. Residen Soedirman masuk untuk berunding dan meminta bendera Belanda diturunkan.', fn: () => { if (A.crowd) A.crowd.gain.value = .15 } },
+    { from: [6, 2.2, -27], to: [7, 2, -31], look: [12, 2, -30], text: 'Pimpinan Belanda, Ploegman, menolak. Perundingan gagal, dan perkelahian pecah di dalam lobi hotel.', fn: () => SFX.shot(20) },
+    { from: [3, 5, -46], to: [5, 3, -43], look: [25, 2, -38], text: 'Di tengah kekacauan, para pemuda mencari jalan menuju atap. Penjaga masih berjaga. Mungkin pintu belakang lebih aman.' },
+  ], () => {
+    if (A.crowd) A.crowd.gain.value = .06;
+    teleport(4, -45, -Math.PI / 2 - .4);
+    stealth = true;
+    setObj('Menyusup ke Hotel Yamato, temukan tangga ke atap', () => stairsPos);
+    dialog('Petunjuk', ['Tekan C untuk merunduk. Saat merunduk, penjaga lebih sulit melihatmu.', 'Hindari area merah di depan penjaga. Lewat pintu belakang di sisi timur hotel bisa jadi pilihan.'], null, { pitch: 1 });
+    const it = addI(stairsPos, 'Naik ke atap', () => {
+      remI(it); stealth = false; $('#sus').style.display = 'none';
+      fadeOut(() => {
+        P.roof = true; teleport(20, -34, -Math.PI * .75, H.h + .2);
+        setObj('Panjat tiang bendera', () => pole);
+        const it2 = addI(pole, 'Panjat & robek warna biru', () => { remI(it2); flagScene() }, 2.2);
+      });
+    }, 2.6);
+  });
+}
+function flagScene() {
+  playCut([
+    { from: [16, 15, -26], to: [15, 18, -27.5], look: [14, 19, -29], text: 'Kamu memanjat tiang bendera. Angin bertiup kencang. Di bawah, ribuan mata menatap ke atas.' },
+    { from: [12.5, 19.6, -26.5], to: [12.8, 19.3, -27.2], look: [14, 19, -29.5], dur: 5, text: 'Kain biru itu dirobek!', fn: () => {
+      setTimeout(() => {
+        SFX.tear(); bigFlag.material.map = flagTex(['#c8102e', '#ffffff']); bigFlag.material.needsUpdate = true;
+        bigFlag.scale.y = .667; bigFlag.position.y = H.h + 7 + .333;
+      }, 1500);
+    } },
+    { from: [0, 2, -34], to: [-2, 1.7, -36], look: [14, 19, -30], text: 'Merah Putih kembali berkibar di langit Surabaya. MERDEKA!', fn: () => { SFX.cheer(); if (A.crowd) A.crowd.gain.value = .25; G.cheer = true } },
+  ], () => {
+    G.cheer = false; if (A.crowd) A.crowd.gain.value = 0;
+    fact('Insiden Bendera Hotel Yamato', 'Pada 19 September 1945, pemuda Surabaya (di antaranya Hariyono dan Koesno Wibowo) memanjat Hotel Yamato dan merobek bagian biru bendera Belanda sehingga tersisa Merah Putih. Peristiwa ini membakar semangat perlawanan rakyat Surabaya.', act2Intro);
+  });
+}
+function act2Intro() {
+  P.roof = false;
+  fadeOut(() => {
+    setAct2();
+    chapter('BABAK II', 'Pertempuran Surabaya · 10 November 1945');
+    playCut([
+      { from: [-30, 30, 60], to: [-10, 20, 30], look: [10, 2, -20], text: '25 Oktober 1945, pasukan Sekutu dari Inggris mendarat di Surabaya. Ketegangan dengan para pejuang terus meningkat.' },
+      { from: [10, 12, 20], to: [5, 8, 0], look: [0, 2, -40], text: '30 Oktober, pimpinan pasukan Inggris, Brigadir Jenderal Mallaby, tewas dalam baku tembak. Inggris pun murka.', fn: () => SFX.boom(30) },
+      { from: [-3, 4, 40], to: [0, 3, 30], look: [0, 2, 0], text: 'Inggris mengeluarkan ultimatum: rakyat Surabaya harus menyerahkan senjata sebelum 10 November pukul 06.00. Arek-arek Suroboyo menolak.' },
+      { from: [12, 25, -60], to: [-12, 18, -20], look: [0, 0, 20], text: 'Pagi 10 November, serangan besar-besaran dimulai dari darat, laut, dan udara.', fn: () => { SFX.boom(15); setTimeout(() => SFX.boom(25), 700); setTimeout(() => SFX.boom(10), 1600) } },
+    ], () => {
+      teleport(-5, 23, Math.PI * .4);
+      setObj('Dengarkan siaran radio di pos pemuda', () => radio.position);
+      const it = addI(radio.position, 'Dengarkan radio', () => { remI(it); radioScene() }, 2.6);
+    });
+  });
+}
+function radioScene() {
+  if (A.radio) A.radio.gain.value = .05;
+  dialog('📻 Radio Pemberontakan — Bung Tomo', [
+    'Saudara-saudara rakyat Surabaya! Bersiaplah! Keadaan genting!',
+    'Kita tunjukkan bahwa kita adalah benar-benar orang yang ingin merdeka!',
+    'Selama banteng-banteng Indonesia masih mempunyai darah merah yang dapat membikin secarik kain putih menjadi merah dan putih, maka selama itu tidak akan kita mau menyerah kepada siapa pun juga!',
+    'Semboyan kita tetap: merdeka atau mati! Allahu Akbar! Merdeka!',
+  ], () => {
+    if (A.radio) A.radio.gain.value = 0;
+    fact('Bung Tomo', 'Sutomo atau Bung Tomo membakar semangat rakyat lewat siaran Radio Pemberontakan. Pidatonya yang berapi-api membuat para pejuang dan warga bertahan dengan gagah berani melawan pasukan yang jauh lebih kuat persenjataannya.', evac);
+  }, { pitch: .85, rate: 1.05 });
+}
+function updEvacObj() {
+  $('#objText').textContent = `Evakuasi warga ke langgar di ujung utara jalan (${saved}/3)`;
+  if (saved >= 3) { shells = false; pending.forEach(s => scene.remove(s.ring)); pending = []; setTimeout(ending, 1500) }
+}
+function evac() {
+  shells = true;
+  const defs = [['Mbok Darmi', [6, 50], 0xa0522d], ['Pak Karto', [-7, 64], 0x8b7d6b], ['Siti kecil', [7.5, 70], 0xe07a9a]];
+  warga = defs.map(([n, p, c], i) => {
+    const w = human({ name: n, shirt: c, pants: 0x4a3a2a, hat: i === 1 ? 'caping' : null }); w.position.set(p[0], .15, p[1]);
+    if (i === 2) w.scale.setScalar(.7);
+    w.userData.n = n;
+    const it = addI(w, 'Ajak ' + n + ' mengungsi', () => { remI(it); followers.push(w); speak(['Matur nuwun, Nak!', 'Ayo, cepat!', 'Aku takut...'][i], 1.1); toast(n.toUpperCase() + ' MENGIKUTIMU', 1200) });
+    return w;
+  });
+  updEvacObj(); SFX.ok();
+  G.target = () => { const w = warga.find(w => !followers.includes(w)); return w ? w.position : (saved < 3 ? V([0, 0, -80]) : null) };
+  dialog('Cak Mat', ['Rek! Masih ada warga yang terjebak di selatan sana!', 'Bawa mereka ke langgar di ujung utara jalan. Hati-hati, awasi lingkaran merah, itu tanda meriam akan jatuh!'], null);
+}
+function ending() {
+  fadeOut(() => {
+    teleport(0, -78, 0);
+    playCut([
+      { from: [0, 4, -78], to: [0, 6, -70], look: [0, 3, -88], text: 'Kamu berhasil menyelamatkan warga. Tapi di seluruh kota, pertempuran terus berkobar.' },
+      { from: [-30, 40, 60], to: [30, 45, 40], look: [0, 0, -20], text: 'Pertempuran Surabaya berlangsung sekitar tiga minggu. Ribuan pejuang dan warga gugur mempertahankan kemerdekaan.' },
+      { from: [-2, 5, -12], to: [2, 9, -20], look: [14, 19, -30], text: 'Surabaya akhirnya dikuasai Sekutu, tetapi perlawanan arek-arek Suroboyo mengejutkan dunia: bangsa Indonesia siap mempertahankan kemerdekaannya.' },
+      { from: [6, 16, -18], to: [10, 19, -24], look: [14, 19.5, -30], text: 'Untuk mengenang keberanian mereka, setiap tanggal 10 November diperingati sebagai Hari Pahlawan.' },
+    ], () => { mode = 'end'; document.exitPointerLock(); $('#hud').hidden = true; $('#end').hidden = false; A.scale = 'act1' });
+  });
+}
+
+/* ================= LOOP ================= */
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+  if (mode === 'play') updatePlayer(dt);
+  else if (mode === 'cut' && cut) updateCut(dt);
+  else if (mode === 'menu') { camera.position.set(Math.sin(T * .05) * 40, 22, 40 + Math.cos(T * .05) * 20); camera.lookAt(14, 12, -30) }
+  if (mode === 'play' || mode === 'cut' || mode === 'dialog' || mode === 'fact') {
+    youths.forEach(y => { if (y.userData.goal) { if (walkTo(y, y.userData.goal, dt, 3.5)) y.userData.goal = null } else animHuman(y, 0, dt) });
+    crowd.forEach((c, i) => { c.position.y = G.cheer ? Math.abs(Math.sin(T * 6 + i)) * .35 : 0; c.userData.armL.rotation.x = G.cheer ? -2.8 : 0 });
+  }
+  updateGuards(dt); updateFlags(T); updateParts(dt); updateAct2(dt); updateInteract(); updateMarker();
+  if (shake > 0) { camera.position.x += rand(-1, 1) * shake * .25; camera.position.y += rand(-1, 1) * shake * .25; shake = Math.max(0, shake - dt * 1.8) }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+setTimeout(() => $('#fade').style.opacity = 0, 200);
+
+$('#startBtn').onclick = () => {
+  initAudio(); $('#menu').hidden = true; $('#hud').hidden = false;
+  canvas.requestPointerLock();
+  fadeOut(intro, 200);
+  mode = 'busy';
+};
+</script>
+</body>
+</html>
