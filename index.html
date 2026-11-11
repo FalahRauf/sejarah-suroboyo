@@ -166,9 +166,22 @@ function musicTick() {
   if (p === 0) { tone(base / 4, 5, .5, 'sine', null, A.music); tone(base / 4 * 1.01, 5, .3, 'sine', null, A.music) }
   if (A.scale === 'act2' && (p === 6 || p === 14)) { tone(95, .25, .4, 'sine', 60, A.music) }
 }
-function speak(text, pitch = 1, rate = 1) {
-  if (!window.speechSynthesis || A.muted) return;
-  speechSynthesis.cancel();
+let curVO = null;
+function stopVO() { if (window.speechSynthesis) speechSynthesis.cancel(); if (curVO) { curVO.pause(); curVO = null } }
+// Voice over sendiri: taruh file audio/<id>.mp3. Kalau file tidak ada, otomatis pakai suara TTS browser.
+function speak(text, pitch = 1, rate = 1, id, onDur) {
+  stopVO(); if (A.muted) return;
+  if (id) {
+    const a = new Audio('audio/' + id + '.mp3'); curVO = a; let done = false;
+    a.onloadedmetadata = () => { onDur && onDur(a.duration) };
+    a.oncanplaythrough = () => { if (done || curVO !== a) return; done = true; a.play().catch(() => {}) };
+    a.onerror = () => { if (done || curVO !== a) return; done = true; curVO = null; tts(text, pitch, rate) };
+    return;
+  }
+  tts(text, pitch, rate);
+}
+function tts(text, pitch, rate) {
+  if (!window.speechSynthesis) return;
   const u = new SpeechSynthesisUtterance(text.replace(/[“”"]/g, ''));
   u.lang = 'id-ID'; u.rate = rate; u.pitch = pitch;
   const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('id'));
@@ -234,8 +247,8 @@ function wallMat(base, win, rw, rh, trim = '#5b3a1e') {
 }
 function building(x, z, w, d, h, color, roofColor = 0x8c3b22) {
   box(w, h, d, x, 0, z, wallMat(color, '#2a3540', Math.max(1, Math.round(w / 4)), Math.max(1, Math.round(h / 4))));
-  const r = new R.Mesh(new R.ConeGeometry(Math.max(w, d) * .75, 3, 4), lam(roofColor));
-  r.rotation.y = Math.PI / 4; r.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d));
+  const geo = new R.ConeGeometry(Math.SQRT1_2 * 1.08, 3, 4); geo.rotateY(Math.PI / 4);
+  const r = new R.Mesh(geo, lam(roofColor)); r.scale.set(w, 1, d);
   r.position.set(x, h + 1.5, z); r.castShadow = true; scene.add(r);
 }
 function label(text, color = '#ffd84a') {
@@ -296,7 +309,7 @@ box(.6, H.h, 7, 10.3, 0, -25.5, hotelMat(2, 3));          // depan kanan
 box(.6, H.h - 3, 2, 10.3, 3, -30, hotelMat(1, 2), false); // atas pintu
 box(.6, H.h, 4.6, 39.7, 0, -35.7, hotelMat(1, 3));        // belakang
 box(.6, H.h, 7.6, 39.7, 0, -26.2, hotelMat(2, 3));
-box(.6, H.h - 3, 2.8, 39.7, 3, -32, hotelMat(1, 2), false);
+box(.6, H.h - 3, 3.4, 39.7, 3, -31.7, hotelMat(1, 2), false);
 box(30, H.h, .6, 25, 0, -37.7, hotelMat(7, 3));            // samping
 box(30, H.h, .6, 25, 0, -22.3, hotelMat(7, 3));
 const roofMat = lam(0xa49a88);
@@ -304,6 +317,23 @@ box(30.4, .4, 16.4, 25, H.h, -30, roofMat, false);
 // parapet atap
 box(30.4, 1, .3, 25, H.h + .4, -37.9, roofMat, false); box(30.4, 1, .3, 25, H.h + .4, -22.1, roofMat, false);
 box(.3, 1, 16.4, 10.05, H.h + .4, -30, roofMat, false); box(.3, 1, 16.4, 39.95, H.h + .4, -30, roofMat, false);
+// pintu yang bisa dibuka/tutup
+const doors = [];
+function door(hx, hz, width, openAngle, name) {
+  const pivot = new R.Group(); pivot.position.set(hx, 0, hz); scene.add(pivot);
+  const tex = canvasTex(64, 128, (g, w, h) => { g.fillStyle = '#5a3418'; g.fillRect(0, 0, w, h); g.strokeStyle = '#3a200c'; g.lineWidth = 4; g.strokeRect(8, 8, w - 16, h / 2 - 12); g.strokeRect(8, h / 2 + 4, w - 16, h / 2 - 12); g.fillStyle = '#d4a84a'; g.fillRect(w - 14, h / 2 - 4, 6, 8) });
+  const m = new R.Mesh(new R.BoxGeometry(.18, 3, width), new R.MeshLambertMaterial({ map: tex }));
+  m.position.set(0, 1.5, width / 2); m.castShadow = true; pivot.add(m);
+  const col = { x0: hx - .3, x1: hx + .3, z0: hz, z1: hz + width, y0: 0, y1: 3 }; colliders.push(col);
+  const d = { pivot, col, open: false, ang: 0, target: 0, openAngle };
+  doors.push(d);
+  addI(V([hx, 0, hz + width / 2]), () => (d.open ? 'Tutup ' : 'Buka ') + name, () => {
+    d.open = !d.open; d.target = d.open ? openAngle : 0; col.off = d.open;
+    tone(d.open ? 180 : 140, .35, .12, 'sawtooth', d.open ? 120 : 90); nz(.15, 'lowpass', 400, .25);
+  }, 2.6);
+  return d;
+}
+function updateDoors(dt) { doors.forEach(d => { d.ang += (d.target - d.ang) * Math.min(1, dt * 6); d.pivot.rotation.y = d.ang }) }
 // menara hotel
 box(5, 6, 5, 37, H.h, -35, hotelMat(1, 1), false);
 const tCap = new R.Mesh(new R.ConeGeometry(3.6, 3, 4), lam(0x7a3b22)); tCap.rotation.y = Math.PI / 4; tCap.position.set(37, H.h + 7.5, -35); scene.add(tCap);
@@ -386,7 +416,7 @@ const keys = {}; let mode = 'menu', T = 0, shake = 0;
 addEventListener('keydown', e => {
   keys[e.code] = true;
   if (e.code === 'KeyC') { P.crouch = !P.crouch; $('#stance').textContent = P.crouch ? 'MERUNDUK' : 'BERDIRI' }
-  if (e.code === 'KeyM') { A.muted = !A.muted; if (A.master) A.master.gain.value = A.muted ? 0 : .85; if (A.muted && window.speechSynthesis) speechSynthesis.cancel() }
+  if (e.code === 'KeyM') { A.muted = !A.muted; if (A.master) A.master.gain.value = A.muted ? 0 : .85; if (A.muted) stopVO() }
   if (e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); action(e.code) }
   if (e.code === 'Enter' && mode === 'cut') skipCut();
 });
@@ -407,7 +437,7 @@ function action(code) {
 }
 function blocked(x, z, r, feet) {
   for (const c of colliders) {
-    if (c.y1 < feet + .45 || c.y0 > feet + 1.5) continue;
+    if (c.off || c.y1 < feet + .45 || c.y0 > feet + 1.5) continue;
     const cx = Math.max(c.x0, Math.min(x, c.x1)), cz = Math.max(c.z0, Math.min(z, c.z1));
     if ((x - cx) ** 2 + (z - cz) ** 2 < r * r) return true;
   }
@@ -443,7 +473,7 @@ function pos3(o) { return o.isVector3 ? o : o.position }
 function updateInteract() {
   curI = null; let best = 1e9;
   for (const it of interacts) { const p = pos3(it.obj); const d = Math.hypot(p.x - P.pos.x, p.z - P.pos.z); if (d < it.r && d < best && Math.abs((p.y || 0) - P.floor) < 3) { best = d; curI = it } }
-  const el = $('#prompt'); if (curI && mode === 'play') { el.innerHTML = `<b>E</b>${curI.text}`; el.style.display = 'block' } else el.style.display = 'none';
+  const el = $('#prompt'); if (curI && mode === 'play') { el.innerHTML = `<b>E</b>${typeof curI.text === 'function' ? curI.text() : curI.text}`; el.style.display = 'block' } else el.style.display = 'none';
 }
 
 /* ================= OBJEKTIF & MARKER ================= */
@@ -467,8 +497,8 @@ function updateMarker() {
 /* ================= UI: DIALOG, FAKTA, CUTSCENE ================= */
 let dlg = null;
 function dialog(name, lines, done, opts = {}) { dlg = { name, lines, i: 0, done, opts }; mode = 'dialog'; $('#dialog').hidden = false; showLine() }
-function showLine() { $('#dName').textContent = dlg.name; $('#dText').textContent = dlg.lines[dlg.i]; speak(dlg.lines[dlg.i], dlg.opts.pitch || 1, dlg.opts.rate || 1.02) }
-function nextLine() { dlg.i++; SFX.tick(); if (dlg.i < dlg.lines.length) return showLine(); $('#dialog').hidden = true; if (window.speechSynthesis) speechSynthesis.cancel(); mode = 'play'; const d = dlg.done; dlg = null; d && d() }
+function showLine() { $('#dName').textContent = dlg.name; $('#dText').textContent = dlg.lines[dlg.i]; speak(dlg.lines[dlg.i], dlg.opts.pitch || 1, dlg.opts.rate || 1.02, dlg.opts.vo ? dlg.opts.vo + '-' + (dlg.i + 1) : null) }
+function nextLine() { dlg.i++; SFX.tick(); if (dlg.i < dlg.lines.length) return showLine(); $('#dialog').hidden = true; stopVO(); mode = 'play'; const d = dlg.done; dlg = null; d && d() }
 let factDone = null;
 function fact(title, text, done) { mode = 'fact'; factDone = done; $('#fact h3').textContent = title; $('#fact p').textContent = text; $('#fact').hidden = false; SFX.ok() }
 function closeFact() { $('#fact').hidden = true; mode = 'play'; const d = factDone; factDone = null; d && d() }
@@ -479,19 +509,19 @@ function toast(t, ms = 1500) { const e = $('#toast'); e.textContent = t; e.style
 
 let cut = null;
 const V = a => new R.Vector3(...a);
-function playCut(shots, onEnd) { cut = { shots, i: -1, t: 0, onEnd }; mode = 'cut'; document.body.classList.add('cine'); nextShot() }
+function playCut(shots, onEnd, vo) { cut = { shots, i: -1, t: 0, onEnd, vo }; mode = 'cut'; document.body.classList.add('cine'); nextShot() }
 function nextShot() {
   cut.i++; cut.t = 0;
   if (cut.i >= cut.shots.length) return endCut();
   const s = cut.shots[cut.i];
   s.d = s.dur || Math.max(4, (s.text || '').length * .072 + 1.2);
   $('#sub').textContent = s.text || '';
-  if (s.text && s.speak !== false) speak(s.text, s.pitch || .95, s.rate || .98);
+  if (s.text && s.speak !== false) speak(s.text, s.pitch || .95, s.rate || .98, cut.vo ? cut.vo + '-' + (cut.i + 1) : null, d => { s.d = Math.max(s.d, d + .6) });
   s.fn && s.fn();
 }
 function skipCut() { if (!cut) return; while (cut && cut.i < cut.shots.length - 1) { cut.i++; const s = cut.shots[cut.i]; s.fn && s.fn() } endCut() }
 function endCut() {
-  if (!cut) return; const e = cut.onEnd; cut = null; $('#sub').textContent = ''; if (window.speechSynthesis) speechSynthesis.cancel();
+  if (!cut) return; const e = cut.onEnd; cut = null; $('#sub').textContent = ''; stopVO();
   document.body.classList.remove('cine'); mode = 'play'; e && e();
 }
 function updateCut(dt) {
@@ -504,8 +534,8 @@ function updateCut(dt) {
 /* ================= PENJAGA (STEALTH) ================= */
 const guards = []; let stealth = false, sus = 0;
 function cone(range) {
-  const m = new R.Mesh(new R.CircleGeometry(range, 24, -0.7, 1.4), new R.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: .16, depthWrite: false, side: R.DoubleSide }));
-  m.rotation.x = -Math.PI / 2; m.rotation.z = Math.PI / 2; m.position.y = .06; return m;
+  const m = new R.Mesh(new R.CircleGeometry(range, 24, -Math.PI / 2 - .7, 1.4), new R.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: .32, depthWrite: false, side: R.DoubleSide }));
+  m.rotation.x = -Math.PI / 2; m.position.y = .15; m.renderOrder = 2; return m;
 }
 function spawnGuards() {
   [[[8.6, -36.5], [8.6, -23.5]], [[14, -29.8], [36, -29.8]], [[22, -36.3], [22, -23.8]], [[30, -24], [30, -36]]].forEach(path => {
@@ -518,7 +548,7 @@ function losClear(a, b) {
   const steps = Math.ceil(a.distanceTo(b) / .4);
   for (let i = 1; i < steps; i++) {
     const x = a.x + (b.x - a.x) * i / steps, z = a.z + (b.z - a.z) * i / steps;
-    for (const c of colliders) if (c.y1 > 1.3 && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return false;
+    for (const c of colliders) if (!c.off && c.y1 > 1.3 && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return false;
   }
   return true;
 }
@@ -543,7 +573,7 @@ function updateGuards(dt) {
 }
 function caught() {
   sus = 0; mode = 'busy'; SFX.alert(); SFX.whistle(); toast('KETAHUAN!'); $('#flash').style.opacity = .5; setTimeout(() => $('#flash').style.opacity = 0, 300);
-  speak('Hei! Berhenti!', 1.2, 1.1);
+  speak('Hei! Berhenti!', 1.2, 1.1, 'penjaga-teriak');
   fadeOut(() => { teleport(4, -45, -Math.PI / 2 - .4); guards.forEach(g => { g.m.position.set(g.home[0], 0, g.home[1]); g.i = 1; g.wait = 0 }); mode = 'play' });
 }
 
@@ -645,8 +675,8 @@ function intro() {
       'Rek! Wis krungu durung? Londo ngibarno bendera merah putih biru nang Hotel Yamato!',
       'Iki ngenyek kemerdekaan kita. Proklamasi wis diumumno, tapi mereka masih merasa berkuasa.',
       'Ayo kumpulno arek-arek. Ada tiga kawan kita di sekitar jalan ini: Dul, Sri, dan Koh Liem. Ajak mereka ke depan hotel!'
-    ], () => { remI(it); rally() }));
-  });
+    ], () => { remI(it); rally() }, { vo: 'cakmat' }));
+  }, 'intro');
 }
 let rallied = 0;
 function rally() {
@@ -658,7 +688,7 @@ function rally() {
       remI(it); y.userData.rallied = true; y.userData.goal = V([rand(2, 6), .15, -26 - i * 3]); rallied++;
       $('#objText').textContent = obj();
       if (rallied === 3) fact('Hotel Yamato', 'Hotel ini dibangun tahun 1910 dengan nama Hotel Oranje. Saat pendudukan Jepang namanya diganti menjadi Hotel Yamato. Kini dikenal sebagai Hotel Majapahit di Jalan Tunjungan, Surabaya.', nego);
-    }));
+    }, { vo: ['dul', 'sri', 'liem'][i] }));
   });
 }
 function nego() {
@@ -674,7 +704,7 @@ function nego() {
     teleport(4, -45, -Math.PI / 2 - .4);
     stealth = true;
     setObj('Menyusup ke Hotel Yamato, temukan tangga ke atap', () => stairsPos);
-    dialog('Petunjuk', ['Tekan C untuk merunduk. Saat merunduk, penjaga lebih sulit melihatmu.', 'Hindari area merah di depan penjaga. Lewat pintu belakang di sisi timur hotel bisa jadi pilihan.'], null, { pitch: 1 });
+    dialog('Petunjuk', ['Tekan C untuk merunduk. Saat merunduk, penjaga lebih sulit melihatmu.', 'Hindari area merah di depan penjaga. Lewat pintu belakang di sisi timur hotel bisa jadi pilihan.'], null, { pitch: 1, vo: 'petunjuk' });
     const it = addI(stairsPos, 'Naik ke atap', () => {
       remI(it); stealth = false; $('#sus').style.display = 'none';
       fadeOut(() => {
@@ -683,7 +713,7 @@ function nego() {
         const it2 = addI(pole, 'Panjat & robek warna biru', () => { remI(it2); flagScene() }, 2.2);
       });
     }, 2.6);
-  });
+  }, 'nego');
 }
 function flagScene() {
   playCut([
@@ -698,7 +728,7 @@ function flagScene() {
   ], () => {
     G.cheer = false; if (A.crowd) A.crowd.gain.value = 0;
     fact('Insiden Bendera Hotel Yamato', 'Pada 19 September 1945, pemuda Surabaya (di antaranya Hariyono dan Koesno Wibowo) memanjat Hotel Yamato dan merobek bagian biru bendera Belanda sehingga tersisa Merah Putih. Peristiwa ini membakar semangat perlawanan rakyat Surabaya.', act2Intro);
-  });
+  }, 'bendera');
 }
 function act2Intro() {
   P.roof = false;
@@ -714,7 +744,7 @@ function act2Intro() {
       teleport(-5, 23, Math.PI * .4);
       setObj('Dengarkan siaran radio di pos pemuda', () => radio.position);
       const it = addI(radio.position, 'Dengarkan radio', () => { remI(it); radioScene() }, 2.6);
-    });
+    }, 'babak2');
   });
 }
 function radioScene() {
@@ -727,7 +757,7 @@ function radioScene() {
   ], () => {
     if (A.radio) A.radio.gain.value = 0;
     fact('Bung Tomo', 'Sutomo atau Bung Tomo membakar semangat rakyat lewat siaran Radio Pemberontakan. Pidatonya yang berapi-api membuat para pejuang dan warga bertahan dengan gagah berani melawan pasukan yang jauh lebih kuat persenjataannya.', evac);
-  }, { pitch: .85, rate: 1.05 });
+  }, { pitch: .85, rate: 1.05, vo: 'radio' });
 }
 function updEvacObj() {
   $('#objText').textContent = `Evakuasi warga ke langgar di ujung utara jalan (${saved}/3)`;
@@ -740,12 +770,12 @@ function evac() {
     const w = human({ name: n, shirt: c, pants: 0x4a3a2a, hat: i === 1 ? 'caping' : null }); w.position.set(p[0], .15, p[1]);
     if (i === 2) w.scale.setScalar(.7);
     w.userData.n = n;
-    const it = addI(w, 'Ajak ' + n + ' mengungsi', () => { remI(it); followers.push(w); speak(['Matur nuwun, Nak!', 'Ayo, cepat!', 'Aku takut...'][i], 1.1); toast(n.toUpperCase() + ' MENGIKUTIMU', 1200) });
+    const it = addI(w, 'Ajak ' + n + ' mengungsi', () => { remI(it); followers.push(w); speak(['Matur nuwun, Nak!', 'Ayo, cepat!', 'Aku takut...'][i], 1.1, 1, 'warga-' + (i + 1)); toast(n.toUpperCase() + ' MENGIKUTIMU', 1200) });
     return w;
   });
   updEvacObj(); SFX.ok();
   G.target = () => { const w = warga.find(w => !followers.includes(w)); return w ? w.position : (saved < 3 ? V([0, 0, -80]) : null) };
-  dialog('Cak Mat', ['Rek! Masih ada warga yang terjebak di selatan sana!', 'Bawa mereka ke langgar di ujung utara jalan. Hati-hati, awasi lingkaran merah, itu tanda meriam akan jatuh!'], null);
+  dialog('Cak Mat', ['Rek! Masih ada warga yang terjebak di selatan sana!', 'Bawa mereka ke langgar di ujung utara jalan. Hati-hati, awasi lingkaran merah, itu tanda meriam akan jatuh!'], null, { vo: 'cakmat2' });
 }
 function ending() {
   fadeOut(() => {
@@ -755,9 +785,12 @@ function ending() {
       { from: [-30, 40, 60], to: [30, 45, 40], look: [0, 0, -20], text: 'Pertempuran Surabaya berlangsung sekitar tiga minggu. Ribuan pejuang dan warga gugur mempertahankan kemerdekaan.' },
       { from: [-2, 5, -12], to: [2, 9, -20], look: [14, 19, -30], text: 'Surabaya akhirnya dikuasai Sekutu, tetapi perlawanan arek-arek Suroboyo mengejutkan dunia: bangsa Indonesia siap mempertahankan kemerdekaannya.' },
       { from: [6, 16, -18], to: [10, 19, -24], look: [14, 19.5, -30], text: 'Untuk mengenang keberanian mereka, setiap tanggal 10 November diperingati sebagai Hari Pahlawan.' },
-    ], () => { mode = 'end'; document.exitPointerLock(); $('#hud').hidden = true; $('#end').hidden = false; A.scale = 'act1' });
+    ], () => { mode = 'end'; document.exitPointerLock(); $('#hud').hidden = true; $('#end').hidden = false; A.scale = 'act1' }, 'ending');
   });
 }
+
+door(10.3, -31, 2, Math.PI / 2, 'pintu depan');
+door(39.7, -33.4, 3.4, -Math.PI / 2, 'pintu belakang');
 
 /* ================= LOOP ================= */
 let last = performance.now();
@@ -771,7 +804,7 @@ function loop(now) {
     youths.forEach(y => { if (y.userData.goal) { if (walkTo(y, y.userData.goal, dt, 3.5)) y.userData.goal = null } else animHuman(y, 0, dt) });
     crowd.forEach((c, i) => { c.position.y = G.cheer ? Math.abs(Math.sin(T * 6 + i)) * .35 : 0; c.userData.armL.rotation.x = G.cheer ? -2.8 : 0 });
   }
-  updateGuards(dt); updateFlags(T); updateParts(dt); updateAct2(dt); updateInteract(); updateMarker();
+  updateGuards(dt); updateDoors(dt); updateFlags(T); updateParts(dt); updateAct2(dt); updateInteract(); updateMarker();
   if (shake > 0) { camera.position.x += rand(-1, 1) * shake * .25; camera.position.y += rand(-1, 1) * shake * .25; shake = Math.max(0, shake - dt * 1.8) }
   renderer.render(scene, camera);
 }
