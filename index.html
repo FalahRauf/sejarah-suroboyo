@@ -110,6 +110,28 @@ body.touch #dialog{bottom:auto;top:70px;width:min(560px,92vw)}
 body.touch #dialog small::after{content:' · atau ketuk kotak ini'}
 body.touch #combatHud{bottom:auto;top:60px}
 @media (max-width:700px){#obj{max-width:60vw}#objText{font-size:14px}}
+#cross.ring{background:transparent;border:2px solid rgba(255,255,255,.75);box-shadow:0 0 2px #000;transition:width .08s,height .08s,margin .08s}
+#cross.ring::after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px;background:#fff;border-radius:50%}
+#hit{transition:opacity .1s,transform .15s}
+#killfeed{position:absolute;top:56%;left:50%;transform:translateX(-50%);font-size:15px;letter-spacing:2px;color:#ffd84a;text-shadow:0 1px 3px #000;opacity:0;transition:opacity .3s}
+#heat{position:absolute;bottom:90px;left:50%;width:200px;margin-left:-100px;height:9px;background:rgba(0,0,0,.55);border:1px solid #fff}
+#heat div{height:100%;width:0}
+#heat::before{content:'PANAS SENAPAN';position:absolute;top:-18px;width:100%;text-align:center;font-size:12px;letter-spacing:2px}
+#mash{position:fixed;left:50%;top:62%;transform:translateX(-50%);z-index:33;text-align:center;width:min(520px,90vw)}
+#mashText{font-size:20px;text-shadow:0 2px 6px #000;margin-bottom:8px;animation:pulse .5s infinite alternate}
+#mashWrap{height:16px;background:rgba(0,0,0,.6);border:2px solid #fff}
+#mashBar{height:100%;width:0;background:linear-gradient(90deg,#c8102e,#fff)}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
+#grade{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.42) 100%)}
+#resStars{font-size:54px;color:#ffd84a;letter-spacing:8px;text-align:center;text-shadow:0 0 18px rgba(255,216,74,.5)}
+#resRows{list-style:none;padding:0}
+#resRows li{font-family:'Special Elite',monospace;font-size:16px;margin:6px 0;color:#888}
+#resRows li.ok{color:#ffd84a}
+#resStats{font-size:14px;color:#ccc}
+.kc{border:1px dashed #666;padding:8px 12px;margin:8px 0;opacity:.6}
+.kc.got{border:1px solid #ffd84a;opacity:1;background:rgba(255,216,74,.06)}
+.kc b{color:#ffd84a}
+#tbtns button.on{background:rgba(255,216,74,.6)}
 #endStats{font-family:'Special Elite',monospace;color:#ffd84a}
 </style>
 </head>
@@ -123,10 +145,11 @@ body.touch #combatHud{bottom:auto;top:60px}
     <button id="btnCont" class="sec" hidden>LANJUTKAN</button>
     <button id="btnChap" class="sec">PILIH BABAK</button>
     <button id="btnSet" class="sec">PENGATURAN</button>
+    <button id="btnKoleksi" class="sec">KOLEKSI KARTU FAKTA</button>
     <button id="btnCred" class="sec">SUMBER &amp; KREDIT</button>
   </div>
   <div class="ctrl"><b>W A S D</b> gerak &nbsp; <b>Mouse</b> lihat &nbsp; <b>Shift</b> lari &nbsp; <b>C</b> merunduk &nbsp; <b>E</b> interaksi<br>
-  <b>Esc</b> pause &nbsp; <b>Klik Kiri</b> tembak &nbsp; <b>R</b> isi peluru &nbsp; <b>G</b> granat &nbsp; <b>Spasi</b> lanjut &nbsp; <b>Enter</b> lewati adegan &nbsp; <b>M</b> suara<br>Pakai headphone untuk pengalaman terbaik 🎧</div>
+  <b>Esc</b> pause &nbsp; <b>Klik Kiri</b> tembak &nbsp; <b>Klik Kanan</b> bidik &nbsp; <b>R</b> isi peluru &nbsp; <b>G</b> granat &nbsp; <b>Spasi</b> lanjut &nbsp; <b>Enter</b> lewati adegan &nbsp; <b>M</b> suara<br>Pakai headphone untuk pengalaman terbaik 🎧</div>
 </div></div>
 
 <div id="hud" hidden>
@@ -134,6 +157,8 @@ body.touch #combatHud{bottom:auto;top:60px}
   <div id="arrow">▲</div>
   <div id="cross"></div>
   <div id="hit">✕</div>
+  <div id="killfeed"></div>
+  <div id="heat" hidden><div></div></div>
   <div id="prompt"></div>
   <div id="sus"><div></div></div>
   <div id="timer" hidden></div>
@@ -148,6 +173,16 @@ body.touch #combatHud{bottom:auto;top:60px}
 <div id="chapter"><b></b><span></span></div>
 <div id="dialog" hidden><div id="dName"></div><div id="dText"></div><small>[E / Spasi] lanjut</small></div>
 <div id="fact" hidden><small>FAKTA SEJARAH</small><h3></h3><p></p><button>[E] LANJUT</button></div>
+<div id="grade"></div>
+<div id="mash" hidden><div id="mashText"></div><div id="mashWrap"><div id="mashBar"></div></div></div>
+<div id="result" class="panel" hidden><div class="card">
+  <h3 id="resTitle"></h3><div id="resStars"></div><ul id="resRows"></ul><p id="resStats"></p>
+  <button id="resNext">LANJUT KE BABAK BERIKUTNYA ▶</button>
+</div></div>
+<div id="koleksi" class="panel" hidden><div class="card">
+  <h3>KOLEKSI KARTU FAKTA</h3><p id="kolCount"></p><div id="kolList"></div>
+  <button class="sec back">TUTUP</button>
+</div></div>
 <div id="pause" class="panel" hidden><div class="card">
   <h3>⏸ PAUSE</h3>
   <button id="btnResume">LANJUTKAN</button>
@@ -197,7 +232,7 @@ body.touch #combatHud{bottom:auto;top:60px}
   <div id="joy"><div id="knob"></div></div>
   <div id="tbtns">
     <button data-t="nade">💣</button><button data-t="reload">R</button><button data-t="fire" class="big">🔫</button>
-    <button data-t="crouch">C</button><button data-t="run">LARI</button><button data-t="act">E</button>
+    <button data-t="crouch">C</button><button data-t="run">LARI</button><button data-t="act">E</button><button data-t="ads">🎯</button>
   </div>
   <button id="tskip">LEWATI ⏭</button>
   <button id="tnext">LANJUT ▶</button>
@@ -214,11 +249,12 @@ body.touch #combatHud{bottom:auto;top:60px}
 <div id="fade"></div>
 
 <script src="js/lib/three.min.js"></script>
-<script src="js/engine.js"></script>
-<script src="js/chars.js"></script>
-<script src="js/combat.js"></script>
-<script src="js/levels.js"></script>
-<script src="js/story.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/engine.js?v=4"></script>
+<script src="js/chars.js?v=4"></script>
+<script src="js/combat.js?v=4"></script>
+<script src="js/levels.js?v=4"></script>
+<script src="js/story.js?v=4"></script>
+<script src="js/ui.js?v=4"></script>
+<script src="js/polish.js?v=4"></script>
 </body>
 </html>

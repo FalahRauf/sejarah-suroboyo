@@ -55,14 +55,14 @@ function tracer(a, b) {
 
 /* ---------- menembak ---------- */
 function fire() {
-  if (!C.hasGun || mode !== 'play' || C.cd > 0 || C.reloading > 0 || P.carry) return;
+  if (!C.hasGun || mode !== 'play' || C.cd > 0 || C.reloading > 0 || P.carry || P.mg) return;
   if (C.ammo <= 0) { tone(1200, .03, .1, 'square'); if (C.reserve > 0) reload(); return }
-  C.ammo--; C.cd = .32; C.kick = 1; SFX.rifle(); shake = Math.max(shake, .05);
+  C.ammo--; C.cd = .32; C.kick = 1; SFX.rifle(); shake = Math.max(shake, .05); if (window.muzzleFlash) muzzleFlash();
   const fl = viewGun.userData.flash; fl.visible = true; fl.material.rotation = Math.random() * 6; setTimeout(() => fl.visible = false, 50);
   const o = camera.getWorldPosition(new R.Vector3());
   const d = new R.Vector3(0, 0, -1).applyQuaternion(camera.getWorldQuaternion(new R.Quaternion()));
-  const sp = P.crouch ? .004 : P.moving ? .02 : .009; d.x += rand(-sp, sp); d.y += rand(-sp, sp); d.z += rand(-sp, sp); d.normalize();
-  P.pitch = Math.min(1.45, P.pitch + .022);
+  const sp = (P.crouch ? .004 : P.moving ? .02 : .009) * (1 - .8 * (C.ads || 0)); d.x += rand(-sp, sp); d.y += rand(-sp, sp); d.z += rand(-sp, sp); d.normalize();
+  P.pitch = Math.min(1.45, P.pitch + .026 * (1 - .5 * (C.ads || 0))); P.yaw += rand(-.007, .007);
   let best = rayWorld(o, d, 150), hitE = null, head = false;
   for (const e of enemies) {
     if (!e.alive) continue; const p = e.m.position;
@@ -72,9 +72,9 @@ function fire() {
   }
   const pt = o.clone().addScaledVector(d, best.t);
   tracer(fl.getWorldPosition(new R.Vector3()), pt);
-  if (hitE) { damageSoldier(hitE, head ? 5 : 1.3, true); SFX.hit(); hitmark(head) }
-  else if (best.tank) { for (let i = 0; i < 4; i++) puff(pt.clone(), 0xffc060, .3, .2, V([rand(-3, 3), rand(1, 4), rand(-3, 3)]), 0); tone(2400, .05, .08, 'square') }
-  else puff(pt, 0x8a7a5a, .6, .6, V([0, .8, 0]), 2);
+  if (hitE) { damageSoldier(hitE, head ? 5 : 1.3, true); SFX.hit(); hitmark(head); if (window.impactFx) { impactFx(pt, 'body'); if (!hitE.alive) killFx() } }
+  else if (best.tank) { for (let i = 0; i < 6; i++) puff(pt.clone(), 0xffc060, .25, .25, V([rand(-4, 4), rand(1, 5), rand(-4, 4)]), 0); tone(2400, .05, .08, 'square') }
+  else if (window.impactFx) impactFx(pt, 'world'); else puff(pt, 0x8a7a5a, .6, .6, V([0, .8, 0]), 2);
   if (C.ammo === 0 && C.reserve > 0) setTimeout(reload, 350);
 }
 function reload() {

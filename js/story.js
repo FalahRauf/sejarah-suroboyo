@@ -134,12 +134,22 @@ function nego() {
 function flagScene() {
   const f = refs.bigFlag;
   playCut([
-    { from: [16, 15, -26], to: [15, 18, -27.5], look: [14, 19, -29], text: 'Kamu memanjat tiang bendera. Angin bertiup kencang. Di bawah, ribuan mata menatap ke atas.' },
-    { from: [12.5, 19.6, -26.5], to: [12.8, 19.3, -27.2], look: [14, 19, -29.5], dur: 5, text: 'Bersama Hariyono dan Koesno Wibowo, kain biru itu dirobek!', fn: () => setTimeout(() => { SFX.tear(); f.material.map = flagTex(['#c8102e', '#ffffff']); f.material.needsUpdate = true; f.scale.y = .667; f.position.y = H.h + 7 + .333 }, 1500) },
-    { from: [0, 2, -34], to: [-2, 1.7, -36], look: [14, 19, -30], text: 'Merah Putih kembali berkibar di langit Surabaya. MERDEKA!', fn: () => { SFX.cheer(); if (A.crowd) A.crowd.gain.value = .25; crowd.concat(youths).forEach(c => setPose(c, 'cheer')) } },
+    { from: [16, 15, -26], to: [13.2, 18.9, -27.6], look: [14, 19, -29], look2: [14.6, 18.6, -29.4], text: 'Kamu memanjat tiang bendera. Angin bertiup kencang. Di bawah, ribuan mata menatap ke atas.' },
   ], () => {
-    if (A.crowd) A.crowd.gain.value = 0;
-    fact('Insiden Bendera Hotel Yamato', 'Pada 19 September 1945, pemuda Surabaya (di antaranya Hariyono dan Koesno Wibowo) memanjat Hotel Yamato dan merobek bagian biru bendera Belanda sehingga tersisa Merah Putih. Peristiwa ini membakar semangat perlawanan rakyat Surabaya.', startAct2);
+    // pemain sendiri yang merobek kain biru
+    mash('Tekan E / klik / LANJUT berulang-ulang untuk merobek kain biru!', p => { f.rotation.z = Math.sin(T * 45) * .06 * p; f.position.x = 14 + Math.sin(T * 30) * .04 * p }, () => {
+      SFX.tear(); f.rotation.z = 0; f.position.x = 14;
+      f.material.map = flagTex(['#c8102e', '#ffffff']); f.material.needsUpdate = true; f.scale.y = .667; f.position.y = H.h + 7 + .333;
+      const bl = new R.Mesh(new R.PlaneGeometry(1.4, .6), new R.MeshLambertMaterial({ color: 0x21468b, side: R.DoubleSide })); bl.position.set(14.5, H.h + 6.2, -29.5); L.add(bl);
+      W.update2 = dt => { bl.position.y -= dt * 1.6; bl.position.x += dt * .8; bl.rotation.x += dt * 2; bl.rotation.z += dt * 1.3; if (bl.position.y < 1) { L.remove(bl); W.update2 = null } };
+      playCut([
+        { from: [12.5, 19.6, -26.5], to: [12.8, 19.3, -27.2], look: [14, 19, -29.5], dur: 4, text: 'Bersama Hariyono dan Koesno Wibowo, kain biru itu dirobek!' },
+        { from: [0, 2, -34], to: [-2, 1.7, -36], look: [14, 19, -30], text: 'Merah Putih kembali berkibar di langit Surabaya. MERDEKA!', fn: () => { SFX.cheer(); if (A.crowd) A.crowd.gain.value = .25; crowd.concat(youths).forEach(c => setPose(c, 'cheer')) } },
+      ], () => {
+        if (A.crowd) A.crowd.gain.value = 0;
+        fact('Insiden Bendera Hotel Yamato', 'Pada 19 September 1945, pemuda Surabaya (di antaranya Hariyono dan Koesno Wibowo) memanjat Hotel Yamato dan merobek bagian biru bendera Belanda sehingga tersisa Merah Putih. Peristiwa ini membakar semangat perlawanan rakyat Surabaya.', startAct2);
+      }, 'bendera', 1);
+    });
   }, 'bendera');
 }
 
@@ -315,11 +325,13 @@ function retreatPhase() {
   }, { vo: 'komandan3' });
 }
 function bridgeScene() {
-  phase3 = 4; $('#timer').hidden = true; enemies.forEach(e => e.cover = e.m.position.clone());
+  if (phase3 === 4) return;
+  phase3 = 4; $('#timer').hidden = true; P.mg = false; enemies.forEach(e => e.cover = e.m.position.clone());
   playCut([
-    { from: [10, 6, 62], to: [8, 5, 60], look: [0, 1, 42], dur: 4, text: 'Kamu berhasil menyeberang. Para pejuang menyalakan sumbu dinamit...' },
+    { from: [10, 6, 62], to: [8, 5, 60], look: [0, 1, 42], dur: 4, text: 'Kamu menekan pemicu. Sumbu dinamit menyala, merambat ke kolong jembatan...' },
     { from: [12, 5, 58], to: [14, 7, 62], look: [0, 1, 42], dur: 5, text: 'DUAR! Jembatan runtuh ke Kali Brantas. Pasukan musuh tertahan di seberang.', fn: () => setTimeout(() => {
       [[-2, 38], [2, 42], [0, 46], [0, 42]].forEach(([x, z], i) => setTimeout(() => boomFx(V([x, 1, z]), 1.6), i * 200));
+      enemies.forEach(e => { const p = e.m.position; if (e.alive && Math.abs(p.x) < 4.5 && p.z > 34 && p.z < 50) damageSoldier(e, 10, true) });
       setTimeout(() => { bridgeUp = false; refs.bridge.visible = false; refs.bridgeCols.forEach(c => c.off = true); colliders.push({ x0: -3.4, x1: 3.4, z0: 36.4, z1: 47.6, y0: -4, y1: 4 }); for (let i = 0; i < 8; i++) puff(V([rand(-3, 3), 0, rand(37, 47)]), 0x8a8a80, 3, 5, V([0, 2, 0]), 3) }, 400);
     }, 1200) },
   ], () => fact('Gunungsari', 'Setelah kota Surabaya dikuasai Sekutu, para pejuang mundur ke daerah selatan seperti Gunungsari, Sidoarjo, dan Mojokerto. Mereka terus melawan. Perlawanan rakyat Surabaya menunjukkan kepada dunia bahwa bangsa Indonesia siap mempertahankan kemerdekaannya.', ending), 'jembatan');
@@ -350,8 +362,8 @@ function updateAct3(dt) {
     $('#timer').style.color = timer3 < 10 ? '#ff4b40' : '#fff';
     if (Math.random() < dt * .5) artillery(V([P.pos.x + rand(-8, 8), 0, P.pos.z + rand(-8, 8)]), 1.6, 3.2, 50);
     allies.forEach(a => { if (!a.alive) return; if (a.retreat === 1 && a.m.position.z > 32) { a.retreat = 2; a.cover = V([rand(-2.4, 2.4), 0, 50]) } else if (a.retreat === 2 && a.m.position.z > 49) { a.retreat = 3; a.cover = V([rand(-25, 25), 0, rand(52, 58)]) } });
-    if (P.pos.z > 50) bridgeScene();
-    else if (timer3 <= 0) { boomFx(V([0, 1, 42]), 1.5); toast('JEMBATAN DILEDAKKAN... KAMU TERLAMBAT!', 2000); die() }
+    if (P.pos.z > 50 && !refs.detArmed) { refs.detArmed = true; armDetonator() }
+    if (timer3 <= 0) { if (refs.detArmed) bridgeScene(); else { boomFx(V([0, 1, 42]), 1.5); toast('JEMBATAN DILEDAKKAN... KAMU TERLAMBAT!', 2000); die() } }
   }
 }
 function ending() {
@@ -374,7 +386,7 @@ function loop(now) {
   else if (mode === 'cut' && cut) updateCut(dt);
   else if (mode === 'menu') { camera.position.set(Math.sin(T * .05) * 40, 22, 40 + Math.cos(T * .05) * 20); camera.lookAt(14, 12, -30) }
   if (mode !== 'menu' && mode !== 'end') {
-    W.update && W.update(dt);
+    W.update && W.update(dt); W.update2 && W.update2(dt);
     youths.forEach(y => { if (y.userData.goal) { if (walkTo(y, y.userData.goal, dt, 3.5)) y.userData.goal = null } else animHuman(y, 0, dt) });
     crowd.forEach(c => animHuman(c, 0, dt));
     updGuards(dt);
@@ -383,6 +395,7 @@ function loop(now) {
   } else if (W.update) W.update(dt);
   updateCombat(dt); updateDoors(dt); updateFlags(T); updateParts(dt); updateFires(dt); updatePending(dt);
   updateInteract(); updateMarker();
+  if (window.polishUpdate) polishUpdate(dt);
   if (shake > 0) { camera.position.x += rand(-1, 1) * shake * .25; camera.position.y += rand(-1, 1) * shake * .25; shake = Math.max(0, shake - dt * 1.8) }
   renderer.render(scene, camera);
 }

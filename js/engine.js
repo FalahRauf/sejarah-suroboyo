@@ -307,11 +307,12 @@ canvas.addEventListener('click', () => { if (!paused) lock() });
 document.addEventListener('pointerlockchange', () => { if (window.onLockChange) onLockChange() });
 addEventListener('mousemove', e => {
   if (document.pointerLockElement !== canvas || mode !== 'play' || paused) return;
-  P.yaw -= e.movementX * .0022 * S.sens; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - e.movementY * .0022 * S.sens));
+  const k = .0022 * S.sens * (1 - .45 * ((window.C && C.ads) || 0)); P.yaw -= e.movementX * k; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - e.movementY * k));
 });
 addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === canvas && mode === 'play' && !paused && window.fire) fire() });
 function action(code) {
   if (paused) return;
+  if (mode === 'mash') return window.mashPress && mashPress();
   if (mode === 'dialog') return nextLine();
   if (mode === 'fact') return closeFact();
   if (mode === 'cut' && code === 'Space') return nextShot();
@@ -398,14 +399,14 @@ function chapter(a, b) { const c = $('#chapter'); c.querySelector('b').textConte
 function toast(t, ms = 1500) { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.display = 'none', ms) }
 
 let cut = null;
-function playCut(shots, onEnd, vo) { cut = { shots, i: -1, t: 0, onEnd, vo }; mode = 'cut'; document.body.classList.add('cine'); nextShot() }
+function playCut(shots, onEnd, vo, off = 0) { cut = { shots, i: -1, t: 0, onEnd, vo, off }; mode = 'cut'; document.body.classList.add('cine'); nextShot() }
 function nextShot() {
   cut.i++; cut.t = 0;
   if (cut.i >= cut.shots.length) return endCut();
   const s = cut.shots[cut.i];
   s.d = s.dur || Math.max(4, (s.text || '').length * .072 + 1.2);
   $('#sub').textContent = s.text || '';
-  if (s.text && s.speak !== false) speak(s.text, s.pitch || .95, s.rate || .98, cut.vo ? cut.vo + '-' + (cut.i + 1) : null, d => { s.d = Math.max(s.d, d + .6) });
+  if (s.text && s.speak !== false) speak(s.text, s.pitch || .95, s.rate || .98, cut.vo ? cut.vo + '-' + (cut.i + 1 + cut.off) : null, d => { s.d = Math.max(s.d, d + .6) });
   s.fn && s.fn();
 }
 function skipCut() { if (!cut) return; while (cut && cut.i < cut.shots.length - 1) { cut.i++; const s = cut.shots[cut.i]; s.fn && s.fn() } endCut() }

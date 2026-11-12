@@ -23,7 +23,7 @@ Durasi cutscene otomatis menyesuaikan panjang rekamanmu.
 | babak3-2.mp3 | Para pejuang mundur ke selatan dan membangun garis pertahanan di Gunungsari, dekat Kali Brantas. |
 | babak3-3.mp3 | Garis ini harus bertahan selama mungkin, agar warga dan pasukan sempat mundur ke luar kota. |
 | tank-1.mp3 | Suara mesin menderu dari utara. TANK! Dua tank Sekutu mendekati garis pertahanan! |
-| jembatan-1.mp3 | Kamu berhasil menyeberang. Para pejuang menyalakan sumbu dinamit... |
+| jembatan-1.mp3 | Kamu menekan pemicu. Sumbu dinamit menyala, merambat ke kolong jembatan... |
 | jembatan-2.mp3 | DUAR! Jembatan runtuh ke Kali Brantas. Pasukan musuh tertahan di seberang. |
 | ending-1.mp3 | Garis pertahanan Gunungsari akhirnya jatuh, tetapi para pejuang berhasil mundur dan terus melawan. |
 | ending-2.mp3 | Pertempuran Surabaya berlangsung sekitar tiga minggu. Ribuan pejuang dan warga gugur mempertahankan kemerdekaan. |
